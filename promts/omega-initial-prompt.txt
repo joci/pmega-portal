@@ -1,0 +1,260 @@
+# Electronics Inventory Management System - Project Specification
+
+## PROJECT OVERVIEW
+Business sells: speakers, TVs, fridges, music keyboards, and spare parts
+Maintenance department: Customers bring broken items for repair
+Key requirement: Track whether spare parts are sold to external customers OR used in maintenance repairs
+Need to know: Who requested spare parts for maintenance purposes
+
+## ARCHITECTURE
+Two separate computers in different physical locations (store and workshop)
+Cannot connect via local network
+Each location needs full offline functionality
+Cloud sync when internet available
+
+## TECH STACK
+- Frontend: Nuxt 3 (SSG/PWA mode)
+- Local Database: Dexie.js (IndexedDB)
+- Cloud Sync: Supabase (free tier)
+- Offline: Service Workers + Background Sync
+- State Management: Pinia
+- UI Framework: Tailwind CSS
+- Deployment: Static files on both computers
+- Backup: Manual JSON export + optional cloud sync
+
+
+## USE CASES TO IMPLEMENT
+
+### 1. INVENTORY MANAGEMENT
+- Add/edit/delete products and spare parts
+- Track real-time stock levels with low-stock alerts
+- View inventory by category (speakers, TVs, fridges, keyboards, spare parts)
+- Bulk import/export functionality
+
+### 2. SALES PROCESSING
+- Record retail sales (products and spare parts to external customers)
+- Record maintenance usage (spare parts used in repairs)
+- Generate invoices/receipts
+- Track payment status
+
+### 3. MAINTENANCE WORKFLOW
+- Create maintenance tickets for broken items
+- Assign technicians to tickets
+- Request spare parts from inventory
+- Record parts used in repairs with technician tracking
+- Track repair status and completion
+- Calculate repair costs (parts + labor)
+
+### 4. SPARE PARTS TRACKING
+- Differentiate between: Retail Sale vs Maintenance Use
+- Track who requested spare parts (technician/customer)
+- Track source: Store inventory vs External supplier
+- Reorder alerts for low stock
+
+### 5. OFFLINE FUNCTIONALITY
+- Full operation without internet
+- Queue transactions for sync
+- Local data persistence with IndexedDB
+- Conflict detection and resolution
+- Manual data export/import via JSON files
+
+### 6. CLOUD SYNC
+- Background sync when internet available
+- Bidirectional sync between computers via Supabase
+- Conflict resolution strategies
+- Sync status indicators
+
+### 7. REPORTING & ANALYTICS
+- Parts usage: Retail vs Maintenance
+- Technician productivity reports
+- Inventory valuation
+- Sales reports by category/period
+- Profitability analysis
+
+## IMPLEMENTATION PHASES
+
+### Phase 1: Core Inventory (Week 1-2)
+1. Nuxt 3 project setup with PWA configuration
+2. Dexie.js schema matching the database structure
+3. Basic CRUD for products/items
+4. Local storage with IndexedDB
+5. Simple UI with Tailwind CSS
+
+### Phase 2: Sales & Maintenance (Week 3-4)
+1. Sales transaction recording (retail + maintenance)
+2. Maintenance ticket system
+3. Part usage tracking
+4. Technician assignment
+5. Offline transaction queue
+
+### Phase 3: Sync & Reports (Week 5-6)
+1. Supabase integration
+2. Background sync service
+3. Conflict resolution
+4. Basic reporting
+5. Data export/import
+
+### Phase 4: Advanced Features (Week 7-8)
+1. Barcode scanning support
+2. Advanced reporting dashboard
+3. Email notifications
+4. Backup/restore system
+5. Performance optimizations
+
+## LOCATION-SPECIFIC FUNCTIONALITIES
+
+### For Store Computer:
+1. Product catalog management
+2. Retail sales processing
+3. Inventory restocking
+4. Customer management
+5. Sales reports
+
+### For Workshop Computer:
+1. Maintenance ticket creation
+2. Technician dashboard
+3. Parts request/usage tracking
+4. Repair status updates
+5. Parts sourcing (store vs external)
+
+## SYNC REQUIREMENTS
+1. When Computer 1 sells a spare part → Update inventory on Computer 2
+2. When Computer 2 uses a spare part → Update inventory on Computer 1
+3. Maintenance tickets created in workshop → Visible in store for customer updates
+4. Customer updates → Sync to both locations
+
+## KEY BUSINESS RULES
+1. Maintenance parts usage has priority for critical repair parts
+2. External supplier parts don't affect store inventory
+3. Low stock alerts trigger reorder suggestions
+4. Parts used in maintenance are tracked with technician ID
+5. Retail sales have standard pricing, maintenance usage may have internal transfer pricing
+6. Sync conflicts: Maintenance usage overrides retail sales for same part
+7. Last write wins for non-critical conflicts
+
+## REQUESTED OUTPUT FOR CODEX/CHATGPT
+Please generate:
+1. Complete Nuxt 3 project structure
+2. Dexie.js schema definition matching the SQL schema
+3. Pinia stores for state management
+4. Service worker configuration for offline
+5. Supabase sync service implementation
+6. Example components for:
+   - Product management
+   - Sales transaction recording
+   - Maintenance ticket creation
+   - Parts usage tracking
+   - Sync status display
+7. Conflict resolution logic
+8. Data export/import functionality
+9. TypeScript interfaces for all data types
+
+## PROJECT STRUCTURE
+nuxt-inventory-system/
+├── assets/
+├── components/
+│   ├── inventory/
+│   ├── sales/
+│   ├── maintenance/
+│   └── shared/
+├── composables/
+│   ├── useDatabase.ts
+│   ├── useSync.ts
+│   ├── useInventory.ts
+│   └── useMaintenance.ts
+├── pages/
+│   ├── index.vue
+│   ├── inventory/
+│   ├── sales/
+│   ├── maintenance/
+│   └── sync.vue
+├── stores/
+│   ├── inventory.ts
+│   ├── sales.ts
+│   └── sync.ts
+├── types/
+│   └── database.ts
+├── utils/
+│   ├── sync.ts
+│   └── offline.ts
+├── public/
+│   └── service-worker.js
+└── nuxt.config.ts
+
+## DEPLOYMENT INSTRUCTIONS
+1. Build app: npm run build
+2. Copy dist/ folder to both computers
+3. On each computer, configure location (STORE or WORKSHOP)
+4. Set up Supabase project and update environment variables
+5. For first sync, export data from one computer and import to the other
+
+## ENVIRONMENT VARIABLES
+NUXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NUXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+NUXT_PUBLIC_APP_LOCATION=STORE # or WORKSHOP
+NUXT_PUBLIC_APP_NAME="Electronics Inventory"
+
+## TESTING SCENARIOS
+1. Complete offline operation for 24 hours
+2. Sync after reconnecting to internet
+3. Conflict: Same part sold in store and used in maintenance simultaneously
+4. Data recovery from JSON backup
+5. Low stock alerts triggering
+6. Technician part request workflow
+
+## SUCCESS METRICS
+1. All functions work offline
+2. Sync completes within 5 minutes of reconnection
+3. Conflict resolution requires < 1 minute manual intervention per week
+4. System handles 10,000+ inventory items
+5. UI load time < 2 seconds on average hardware
+
+## MAINTENANCE PROCEDURES
+1. Daily: Export JSON backup
+2. Weekly: Verify sync integrity
+3. Monthly: Clear old sync queue entries
+4. Quarterly: Test restore from backup
+
+## SECURITY CONSIDERATIONS
+1. Local data encrypted at rest
+2. Supabase RLS policies for cloud data
+3. No sensitive data in sync queue
+4. User authentication required for critical operations
+
+## FUTURE ENHANCEMENTS (PHASE 5+)
+1. Mobile app for technicians
+2. Barcode/RFID integration
+3. Predictive inventory ordering
+4. Integration with accounting software
+5. Customer portal for repair status
+6. SMS/Email notifications
+7. Multi-language support
+8. Audit trail for all transactions
+
+## SUPPORT CONTACTS
+Store Manager: [Store Manager Contact]
+Workshop Supervisor: [Workshop Supervisor Contact]
+System Admin: [Admin Contact]
+
+## VERSION HISTORY
+v1.0.0 - Initial release with core inventory and offline sync
+v1.1.0 - Add barcode scanning
+v1.2.0 - Advanced reporting dashboard
+v1.3.0 - Mobile app for technicians
+
+## LICENSE
+Proprietary - For internal use only
+
+## DOCUMENTATION LINKS
+- Nuxt 3: https://nuxt.com/
+- Dexie.js: https://dexie.org/
+- Supabase: https://supabase.com/
+- Tailwind CSS: https://tailwindcss.com/
+- PWA Guide: https://web.dev/progressive-web-apps/
+
+## TROUBLESHOOTING GUIDE
+1. Offline not working: Check service worker registration
+2. Sync failing: Verify Supabase credentials and internet connection
+3. Data loss: Restore from latest JSON backup
+4. Performance issues: Clear browser cache and IndexedDB
+5. Conflict errors: Use manual conflict resolution UI

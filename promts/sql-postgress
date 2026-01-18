@@ -1,0 +1,870 @@
+-- ============================================
+-- ELECTRONICS INVENTORY MANAGEMENT SYSTEM
+-- Postgres schema aligned with project spec
+-- ============================================
+-- Notes:
+-- - Postgres syntax (jsonb, generated columns, plpgsql).
+-- - app_user is used instead of user to avoid reserved keyword conflicts.
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ========== CORE TABLES ==========
+
+CREATE TABLE address (
+  address_id varchar(36) PRIMARY KEY,
+  postal_code varchar(20) NOT NULL,
+  city varchar(100) NOT NULL,
+  country varchar(100) NOT NULL,
+  state varchar(100) NOT NULL,
+  address_line1 varchar(255) NOT NULL,
+  address_line2 varchar(255),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED'
+);
+
+CREATE TABLE category (
+  category_id varchar(36) PRIMARY KEY,
+  name varchar(255) NOT NULL,
+  description text,
+  category_type text CHECK (category_type IN ('PRODUCT', 'SPARE_PART', 'BOTH')) DEFAULT 'PRODUCT',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED'
+);
+
+CREATE TABLE location (
+  location_id varchar(36) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  location_type text CHECK (location_type IN ('STORE', 'WORKSHOP', 'WAREHOUSE')) DEFAULT 'STORE',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED'
+);
+
+CREATE TABLE customer (
+  customer_id varchar(36) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  email varchar(100),
+  phone varchar(15),
+  address_id varchar(36),
+  customer_type text CHECK (customer_type IN ('RETAIL', 'MAINTENANCE', 'BOTH')) DEFAULT 'RETAIL',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (address_id) REFERENCES address(address_id)
+);
+
+CREATE TABLE item (
+  item_id varchar(36) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  description text,
+  price numeric(10,2) NOT NULL,
+  cost numeric(10,2) DEFAULT 0.00,
+  category_id varchar(36),
+  location_id varchar(36),
+  item_type text CHECK (item_type IN ('PRODUCT', 'SPARE_PART')) DEFAULT 'PRODUCT',
+  is_for_maintenance boolean DEFAULT FALSE,
+  min_stock_level int DEFAULT 5,
+  reorder_quantity int DEFAULT 10,
+  stock_location text CHECK (stock_location IN ('STORE', 'WORKSHOP', 'BOTH')) DEFAULT 'BOTH',
+  sku varchar(50) UNIQUE,
+  barcode varchar(100),
+  weight numeric(8,2),
+  dimensions varchar(50),
+  manufacturer varchar(100),
+  warranty_period int,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (category_id) REFERENCES category(category_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE customer_device (
+  device_id varchar(36) PRIMARY KEY,
+  customer_id varchar(36) NOT NULL,
+  catalog_item_id varchar(36),
+  brand varchar(100),
+  model varchar(100),
+  serial_number varchar(100),
+  purchase_date date,
+  warranty_expiry date,
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+  FOREIGN KEY (catalog_item_id) REFERENCES item(item_id)
+);
+
+CREATE TABLE inventory (
+  inventory_id varchar(36) PRIMARY KEY,
+  item_id varchar(36) NOT NULL,
+  location_id varchar(36) NOT NULL,
+  quantity int NOT NULL DEFAULT 0,
+  reserved_quantity int DEFAULT 0,
+  available_quantity int GENERATED ALWAYS AS (quantity - reserved_quantity) STORED,
+  batch_number varchar(50),
+  expiry_date date,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (item_id) REFERENCES item(item_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id),
+  UNIQUE (item_id, location_id)
+);
+
+CREATE TABLE supplier (
+  supplier_id varchar(36) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  contact_info varchar(255),
+  email varchar(100),
+  phone varchar(15),
+  address_id varchar(36),
+  supplier_type text CHECK (supplier_type IN ('PRODUCT', 'SPARE_PART', 'BOTH')) DEFAULT 'BOTH',
+  payment_terms varchar(100),
+  lead_time_days int DEFAULT 7,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (address_id) REFERENCES address(address_id)
+);
+
+CREATE TABLE item_supplier (
+  item_supplier_id varchar(36) PRIMARY KEY,
+  item_id varchar(36) NOT NULL,
+  supplier_id varchar(36) NOT NULL,
+  supplier_sku varchar(50) NOT NULL,
+  supplier_price numeric(10,2),
+  minimum_order_quantity int DEFAULT 1,
+  is_preferred boolean DEFAULT FALSE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (item_id) REFERENCES item(item_id),
+  FOREIGN KEY (supplier_id) REFERENCES supplier(supplier_id),
+  UNIQUE (item_id, supplier_id)
+);
+
+CREATE TABLE app_user (
+  user_id varchar(36) PRIMARY KEY,
+  username varchar(50) NOT NULL UNIQUE,
+  password_hash varchar(255) NOT NULL,
+  email varchar(100),
+  phone varchar(15),
+  first_name varchar(50) NOT NULL,
+  last_name varchar(50) NOT NULL,
+  address_id varchar(36),
+  department text CHECK (department IN ('STORE', 'WORKSHOP', 'ADMIN', 'MANAGEMENT')) DEFAULT 'STORE',
+  position varchar(50),
+  is_active boolean DEFAULT TRUE,
+  last_login timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (address_id) REFERENCES address(address_id)
+);
+
+CREATE TABLE role (
+  role_id varchar(36) PRIMARY KEY,
+  role_name varchar(50) NOT NULL UNIQUE,
+  description text,
+  permissions jsonb,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED'
+);
+
+CREATE TABLE user_role (
+  user_role_id varchar(36) PRIMARY KEY,
+  user_id varchar(36) NOT NULL,
+  role_id varchar(36) NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (user_id) REFERENCES app_user(user_id),
+  FOREIGN KEY (role_id) REFERENCES role(role_id),
+  UNIQUE (user_id, role_id)
+);
+
+CREATE TABLE repair_service (
+  repair_service_id varchar(36) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  contact_info varchar(255),
+  address_id varchar(36),
+  specialization varchar(100),
+  service_rating numeric(3,2),
+  is_active boolean DEFAULT TRUE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED',
+  FOREIGN KEY (address_id) REFERENCES address(address_id)
+);
+
+-- ========== TRANSACTION TABLES ==========
+
+CREATE TABLE maintenance_ticket (
+  ticket_id varchar(36) PRIMARY KEY,
+  ticket_number varchar(20) UNIQUE,
+  customer_id varchar(36) NOT NULL,
+  customer_device_id varchar(36) NOT NULL,
+  technician_id varchar(36),
+  status text CHECK (status IN ('PENDING', 'DIAGNOSIS', 'WAITING_PARTS', 'IN_PROGRESS', 'TESTING', 'COMPLETED', 'DELIVERED', 'CANCELLED')) DEFAULT 'PENDING',
+  problem_description text NOT NULL,
+  diagnosis text,
+  estimated_cost numeric(10,2),
+  estimated_completion timestamptz,
+  repair_cost numeric(10,2),
+  labor_cost numeric(10,2),
+  labor_hours numeric(5,2),
+  total_cost numeric(10,2) GENERATED ALWAYS AS (COALESCE(repair_cost, 0) + COALESCE(labor_cost, 0)) STORED,
+  payment_status text CHECK (payment_status IN ('PENDING', 'PAID', 'PARTIAL', 'INVOICED')) DEFAULT 'PENDING',
+  priority text CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')) DEFAULT 'MEDIUM',
+  warranty_status text CHECK (warranty_status IN ('IN_WARRANTY', 'OUT_OF_WARRANTY', 'EXTENDED')) DEFAULT 'OUT_OF_WARRANTY',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  completed_at timestamptz,
+  delivered_at timestamptz,
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  location_id varchar(36) NOT NULL,
+  FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+  FOREIGN KEY (customer_device_id) REFERENCES customer_device(device_id),
+  FOREIGN KEY (technician_id) REFERENCES app_user(user_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE sale (
+  sale_id varchar(36) PRIMARY KEY,
+  sale_number varchar(20) UNIQUE,
+  sale_date timestamptz DEFAULT now(),
+  sale_type text CHECK (sale_type IN ('RETAIL', 'MAINTENANCE', 'INTERNAL')) DEFAULT 'RETAIL',
+  status text CHECK (status IN ('OPEN', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'VOID')) DEFAULT 'OPEN',
+  payment_status text CHECK (payment_status IN ('UNPAID', 'PARTIAL', 'PAID', 'REFUNDED')) DEFAULT 'UNPAID',
+  customer_id varchar(36),
+  maintenance_ticket_id varchar(36),
+  subtotal_amount numeric(10,2) DEFAULT 0.00,
+  discount_amount numeric(10,2) DEFAULT 0.00,
+  tax_amount numeric(10,2) DEFAULT 0.00,
+  total_amount numeric(10,2) DEFAULT 0.00,
+  is_repair_service boolean DEFAULT FALSE,
+  repair_service_id varchar(36),
+  performed_by varchar(36),
+  shipping_address_id varchar(36),
+  notes text,
+  location_id varchar(36) NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  updated_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+  FOREIGN KEY (maintenance_ticket_id) REFERENCES maintenance_ticket(ticket_id),
+  FOREIGN KEY (repair_service_id) REFERENCES repair_service(repair_service_id),
+  FOREIGN KEY (performed_by) REFERENCES app_user(user_id),
+  FOREIGN KEY (shipping_address_id) REFERENCES address(address_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE sale_item (
+  sale_item_id varchar(36) PRIMARY KEY,
+  sale_id varchar(36) NOT NULL,
+  item_id varchar(36),
+  description text,
+  line_type text CHECK (line_type IN ('PRODUCT', 'SPARE_PART', 'LABOR', 'FEE', 'ADJUSTMENT')) DEFAULT 'PRODUCT',
+  quantity int NOT NULL DEFAULT 1,
+  unit_price numeric(10,2) NOT NULL,
+  discount_amount numeric(10,2) DEFAULT 0.00,
+  tax_amount numeric(10,2) DEFAULT 0.00,
+  line_total numeric(10,2) NOT NULL,
+  affects_inventory boolean DEFAULT TRUE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (sale_id) REFERENCES sale(sale_id),
+  FOREIGN KEY (item_id) REFERENCES item(item_id)
+);
+
+CREATE TABLE payment (
+  payment_id varchar(36) PRIMARY KEY,
+  sale_id varchar(36) NOT NULL,
+  payment_date timestamptz DEFAULT now(),
+  amount numeric(10,2) NOT NULL,
+  payment_method text CHECK (payment_method IN ('CASH', 'CARD', 'TRANSFER', 'CREDIT', 'MOBILE')) DEFAULT 'CASH',
+  payment_type text CHECK (payment_type IN ('PAYMENT', 'REFUND', 'ADJUSTMENT')) DEFAULT 'PAYMENT',
+  status text CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')) DEFAULT 'COMPLETED',
+  transaction_reference varchar(100),
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  created_by varchar(36),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (sale_id) REFERENCES sale(sale_id),
+  FOREIGN KEY (created_by) REFERENCES app_user(user_id)
+);
+
+CREATE TABLE part_request (
+  request_id varchar(36) PRIMARY KEY,
+  ticket_id varchar(36) NOT NULL,
+  part_id varchar(36) NOT NULL,
+  quantity_requested int NOT NULL DEFAULT 1,
+  requested_by varchar(36) NOT NULL,
+  requested_at timestamptz DEFAULT now(),
+  approved_by varchar(36),
+  approved_at timestamptz,
+  status text CHECK (status IN ('REQUESTED', 'APPROVED', 'REJECTED', 'FULFILLED', 'CANCELLED')) DEFAULT 'REQUESTED',
+  source_preference text CHECK (source_preference IN ('STORE_INVENTORY', 'EXTERNAL_SUPPLIER', 'CUSTOMER_PROVIDED')) DEFAULT 'STORE_INVENTORY',
+  notes text,
+  location_id varchar(36) NOT NULL,
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (ticket_id) REFERENCES maintenance_ticket(ticket_id),
+  FOREIGN KEY (part_id) REFERENCES item(item_id),
+  FOREIGN KEY (requested_by) REFERENCES app_user(user_id),
+  FOREIGN KEY (approved_by) REFERENCES app_user(user_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE part_usage (
+  usage_id varchar(36) PRIMARY KEY,
+  ticket_id varchar(36) NOT NULL,
+  request_id varchar(36),
+  sale_item_id varchar(36),
+  part_id varchar(36) NOT NULL,
+  quantity_used int NOT NULL DEFAULT 1,
+  unit_cost numeric(10,2) NOT NULL,
+  total_cost numeric(10,2) GENERATED ALWAYS AS (quantity_used * unit_cost) STORED,
+  source text CHECK (source IN ('STORE_INVENTORY', 'EXTERNAL_SUPPLIER', 'CUSTOMER_PROVIDED')) DEFAULT 'STORE_INVENTORY',
+  external_supplier_id varchar(36),
+  external_reference varchar(100),
+  used_by varchar(36),
+  used_at timestamptz DEFAULT now(),
+  notes text,
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  location_id varchar(36) NOT NULL,
+  FOREIGN KEY (ticket_id) REFERENCES maintenance_ticket(ticket_id),
+  FOREIGN KEY (request_id) REFERENCES part_request(request_id),
+  FOREIGN KEY (sale_item_id) REFERENCES sale_item(sale_item_id),
+  FOREIGN KEY (part_id) REFERENCES item(item_id),
+  FOREIGN KEY (external_supplier_id) REFERENCES supplier(supplier_id),
+  FOREIGN KEY (used_by) REFERENCES app_user(user_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE ticket_update (
+  update_id varchar(36) PRIMARY KEY,
+  ticket_id varchar(36) NOT NULL,
+  user_id varchar(36) NOT NULL,
+  update_type text CHECK (update_type IN ('STATUS_CHANGE', 'NOTE_ADDED', 'PART_USED', 'COST_UPDATED', 'TECHNICIAN_ASSIGNED')) NOT NULL,
+  old_value text,
+  new_value text,
+  description text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (ticket_id) REFERENCES maintenance_ticket(ticket_id),
+  FOREIGN KEY (user_id) REFERENCES app_user(user_id)
+);
+
+-- ========== SYNC & OFFLINE SUPPORT TABLES ==========
+
+CREATE TABLE sync_queue (
+  queue_id varchar(36) PRIMARY KEY,
+  table_name varchar(50) NOT NULL,
+  record_id varchar(36) NOT NULL,
+  operation text CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')) NOT NULL,
+  data jsonb NOT NULL,
+  sync_status text CHECK (sync_status IN ('PENDING', 'PROCESSING', 'SYNCED', 'FAILED', 'CONFLICT')) DEFAULT 'PENDING',
+  retry_count int DEFAULT 0,
+  error_message text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  processed_at timestamptz,
+  location_id varchar(36) NOT NULL,
+  priority text CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH')) DEFAULT 'MEDIUM',
+  conflict_resolution text CHECK (conflict_resolution IN ('AUTO', 'MANUAL')) DEFAULT 'AUTO',
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+CREATE TABLE sync_conflict (
+  conflict_id varchar(36) PRIMARY KEY,
+  queue_id varchar(36) NOT NULL,
+  table_name varchar(50) NOT NULL,
+  record_id varchar(36) NOT NULL,
+  local_data jsonb NOT NULL,
+  remote_data jsonb NOT NULL,
+  conflict_type text CHECK (conflict_type IN ('DATA_CONFLICT', 'VERSION_CONFLICT', 'DELETE_CONFLICT')) NOT NULL,
+  resolution text CHECK (resolution IN ('LOCAL_WINS', 'REMOTE_WINS', 'MANUAL_MERGE', 'NEW_RECORD')),
+  resolved_data jsonb,
+  resolved_by varchar(36),
+  resolved_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'RESOLVED', 'IGNORED')) DEFAULT 'PENDING',
+  FOREIGN KEY (queue_id) REFERENCES sync_queue(queue_id),
+  FOREIGN KEY (resolved_by) REFERENCES app_user(user_id)
+);
+
+CREATE TABLE sync_history (
+  history_id varchar(36) PRIMARY KEY,
+  sync_session_id varchar(36) NOT NULL,
+  location_id varchar(36) NOT NULL,
+  start_time timestamptz NOT NULL,
+  end_time timestamptz,
+  records_sent int DEFAULT 0,
+  records_received int DEFAULT 0,
+  conflicts_found int DEFAULT 0,
+  status text CHECK (status IN ('SUCCESS', 'PARTIAL', 'FAILED')) DEFAULT 'SUCCESS',
+  error_message text,
+  created_at timestamptz DEFAULT now(),
+  FOREIGN KEY (location_id) REFERENCES location(location_id)
+);
+
+-- ========== ADDITIONAL TABLES ==========
+
+CREATE TABLE purchase_order (
+  order_id varchar(36) PRIMARY KEY,
+  order_number varchar(20) UNIQUE,
+  supplier_id varchar(36) NOT NULL,
+  order_date timestamptz DEFAULT now(),
+  expected_delivery timestamptz,
+  status text CHECK (status IN ('DRAFT', 'PENDING', 'ORDERED', 'PARTIAL', 'RECEIVED', 'CANCELLED')) DEFAULT 'DRAFT',
+  total_amount numeric(10,2) DEFAULT 0.00,
+  created_by varchar(36),
+  approved_by varchar(36),
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (supplier_id) REFERENCES supplier(supplier_id)
+);
+
+CREATE TABLE order_item (
+  order_item_id varchar(36) PRIMARY KEY,
+  order_id varchar(36) NOT NULL,
+  item_id varchar(36) NOT NULL,
+  quantity int NOT NULL,
+  unit_price numeric(10,2) NOT NULL,
+  total_price numeric(10,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  received_quantity int DEFAULT 0,
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (order_id) REFERENCES purchase_order(order_id),
+  FOREIGN KEY (item_id) REFERENCES item(item_id)
+);
+
+CREATE TABLE stock_movement (
+  movement_id varchar(36) PRIMARY KEY,
+  item_id varchar(36) NOT NULL,
+  location_id varchar(36) NOT NULL,
+  movement_type text CHECK (movement_type IN ('PURCHASE', 'SALE', 'RETURN', 'ADJUSTMENT', 'TRANSFER', 'MAINTENANCE_USE')) NOT NULL,
+  quantity int NOT NULL,
+  previous_quantity int NOT NULL,
+  new_quantity int NOT NULL,
+  reference_id varchar(36),
+  reference_type varchar(50),
+  reason text,
+  performed_by varchar(36),
+  performed_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'PENDING',
+  FOREIGN KEY (item_id) REFERENCES item(item_id),
+  FOREIGN KEY (location_id) REFERENCES location(location_id),
+  FOREIGN KEY (performed_by) REFERENCES app_user(user_id)
+);
+
+CREATE TABLE settings (
+  setting_id varchar(36) PRIMARY KEY,
+  setting_key varchar(100) NOT NULL UNIQUE,
+  setting_value text,
+  setting_type text CHECK (setting_type IN ('STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE')) DEFAULT 'STRING',
+  category varchar(50) DEFAULT 'GENERAL',
+  description text,
+  is_editable boolean DEFAULT TRUE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  sync_status text CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')) DEFAULT 'SYNCED'
+);
+
+-- ========== INDEXES FOR PERFORMANCE ==========
+
+CREATE INDEX idx_item_sku ON item(sku);
+CREATE INDEX idx_item_type ON item(item_type);
+CREATE INDEX idx_item_location ON item(stock_location);
+CREATE INDEX idx_sale_date ON sale(sale_date);
+CREATE INDEX idx_sale_type ON sale(sale_type);
+CREATE INDEX idx_sale_location ON sale(location_id);
+CREATE INDEX idx_sale_item_sale ON sale_item(sale_id);
+CREATE INDEX idx_sale_item_item ON sale_item(item_id);
+CREATE INDEX idx_payment_sale ON payment(sale_id);
+CREATE INDEX idx_ticket_status ON maintenance_ticket(status);
+CREATE INDEX idx_ticket_customer ON maintenance_ticket(customer_id);
+CREATE INDEX idx_ticket_technician ON maintenance_ticket(technician_id);
+CREATE INDEX idx_ticket_location ON maintenance_ticket(location_id);
+CREATE INDEX idx_part_request_ticket ON part_request(ticket_id);
+CREATE INDEX idx_part_usage_ticket ON part_usage(ticket_id);
+CREATE INDEX idx_inventory_item ON inventory(item_id);
+CREATE INDEX idx_inventory_location ON inventory(location_id);
+CREATE INDEX idx_sync_queue_status ON sync_queue(sync_status, location_id);
+CREATE INDEX idx_sync_queue_location ON sync_queue(location_id);
+CREATE INDEX idx_sync_history_session ON sync_history(sync_session_id);
+CREATE INDEX idx_sync_history_time ON sync_history(start_time);
+CREATE INDEX idx_stock_movement_item ON stock_movement(item_id, movement_type);
+CREATE INDEX idx_customer_device_customer ON customer_device(customer_id);
+
+-- ========== INITIAL DATA ==========
+
+INSERT INTO location (location_id, name, location_type) VALUES
+('store-location-001', 'Main Store', 'STORE'),
+('workshop-location-001', 'Repair Workshop', 'WORKSHOP');
+
+INSERT INTO category (category_id, name, category_type, description) VALUES
+('cat-speakers-001', 'Speakers', 'PRODUCT', 'Audio speakers and sound systems'),
+('cat-tvs-001', 'Televisions', 'PRODUCT', 'TVs and displays'),
+('cat-fridges-001', 'Refrigerators', 'PRODUCT', 'Cooling appliances'),
+('cat-keyboards-001', 'Music Keyboards', 'PRODUCT', 'Musical instruments'),
+('cat-spare-parts-001', 'Spare Parts', 'SPARE_PART', 'Repair and replacement parts'),
+('cat-accessories-001', 'Accessories', 'BOTH', 'Cables, remotes, stands');
+
+INSERT INTO role (role_id, role_name, description, permissions) VALUES
+('role-admin-001', 'Administrator', 'Full system access', '{"inventory": "full", "sales": "full", "maintenance": "full", "reports": "full", "settings": "full"}'::jsonb),
+('role-store-001', 'Store Manager', 'Store operations', '{"inventory": "read_write", "sales": "full", "maintenance": "read", "reports": "read"}'::jsonb),
+('role-tech-001', 'Technician', 'Repair workshop', '{"inventory": "read", "sales": "none", "maintenance": "full", "reports": "read"}'::jsonb),
+('role-sales-001', 'Sales Staff', 'Sales operations', '{"inventory": "read", "sales": "full", "maintenance": "none", "reports": "read"}'::jsonb);
+
+INSERT INTO settings (setting_id, setting_key, setting_value, setting_type, description) VALUES
+('setting-sync-001', 'sync_interval_minutes', '5', 'NUMBER', 'Sync interval in minutes'),
+('setting-sync-002', 'auto_sync_enabled', 'true', 'BOOLEAN', 'Enable automatic background sync'),
+('setting-sync-003', 'conflict_auto_resolve', 'true', 'BOOLEAN', 'Auto-resolve simple conflicts'),
+('setting-sync-004', 'max_retry_attempts', '3', 'NUMBER', 'Maximum sync retry attempts'),
+('setting-inv-001', 'low_stock_threshold', '5', 'NUMBER', 'Low stock alert threshold'),
+('setting-inv-002', 'enable_stock_alerts', 'true', 'BOOLEAN', 'Enable low stock alerts'),
+('setting-app-001', 'app_location_id', 'store-location-001', 'STRING', 'Current application location id'),
+('setting-app-002', 'tax_rate', '0.15', 'NUMBER', 'Default tax rate (15%)');
+
+-- ========== FUNCTIONS ==========
+
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION set_sale_number()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.sale_number IS NULL THEN
+    NEW.sale_number = 'SALE-' || to_char(now(), 'YYYYMMDD-') || lpad((floor(random() * 10000))::text, 4, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION set_ticket_number()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.ticket_number IS NULL THEN
+    NEW.ticket_number = 'TICKET-' || to_char(now(), 'YYYYMMDD-') || lpad((floor(random() * 10000))::text, 4, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION enqueue_sale_sync()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO sync_queue (
+    queue_id, table_name, record_id, operation,
+    data, sync_status, location_id, created_at
+  ) VALUES (
+    gen_random_uuid()::text, 'sale', NEW.sale_id, 'INSERT',
+    jsonb_build_object(
+      'sale_id', NEW.sale_id,
+      'sale_number', NEW.sale_number,
+      'sale_date', NEW.sale_date,
+      'sale_type', NEW.sale_type,
+      'status', NEW.status,
+      'payment_status', NEW.payment_status,
+      'total_amount', NEW.total_amount,
+      'location_id', NEW.location_id,
+      'customer_id', NEW.customer_id,
+      'maintenance_ticket_id', NEW.maintenance_ticket_id
+    ),
+    'PENDING', NEW.location_id, now()
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_inventory_after_sale_item(
+  p_item_id varchar(36),
+  p_location_id varchar(36),
+  p_quantity int,
+  p_sale_item_id varchar(36),
+  p_user_id varchar(36)
+) RETURNS void AS $$
+DECLARE
+  current_qty int;
+  new_qty int;
+BEGIN
+  SELECT quantity INTO current_qty
+  FROM inventory
+  WHERE item_id = p_item_id AND location_id = p_location_id;
+
+  IF current_qty IS NULL THEN
+    RAISE EXCEPTION 'Inventory record not found for item % at location %', p_item_id, p_location_id;
+  END IF;
+
+  new_qty = current_qty - p_quantity;
+
+  UPDATE inventory
+  SET quantity = new_qty,
+      updated_at = now(),
+      updated_by = p_user_id
+  WHERE item_id = p_item_id AND location_id = p_location_id;
+
+  INSERT INTO stock_movement (
+    movement_id, item_id, location_id, movement_type,
+    quantity, previous_quantity, new_quantity,
+    reference_id, reference_type, performed_by
+  ) VALUES (
+    gen_random_uuid()::text, p_item_id, p_location_id, 'SALE',
+    p_quantity, current_qty, new_qty,
+    p_sale_item_id, 'SALE_ITEM', p_user_id
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION check_low_stock_items(p_location_id varchar(36))
+RETURNS TABLE (
+  item_id varchar(36),
+  name varchar(100),
+  sku varchar(50),
+  item_type text,
+  min_stock_level int,
+  current_stock int,
+  stock_status text
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    i.item_id,
+    i.name,
+    i.sku,
+    i.item_type,
+    i.min_stock_level,
+    inv.quantity,
+    CASE
+      WHEN inv.quantity <= i.min_stock_level THEN 'CRITICAL'
+      WHEN inv.quantity <= (i.min_stock_level * 2) THEN 'LOW'
+      ELSE 'OK'
+    END
+  FROM item i
+  JOIN inventory inv ON i.item_id = inv.item_id
+  WHERE inv.location_id = p_location_id
+    AND inv.quantity <= (i.min_stock_level * 2)
+  ORDER BY stock_status, inv.quantity ASC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ========== TRIGGERS ==========
+
+CREATE TRIGGER set_address_updated_at
+BEFORE UPDATE ON address
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_category_updated_at
+BEFORE UPDATE ON category
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_location_updated_at
+BEFORE UPDATE ON location
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_customer_updated_at
+BEFORE UPDATE ON customer
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_item_updated_at
+BEFORE UPDATE ON item
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_customer_device_updated_at
+BEFORE UPDATE ON customer_device
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_inventory_updated_at
+BEFORE UPDATE ON inventory
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_supplier_updated_at
+BEFORE UPDATE ON supplier
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_item_supplier_updated_at
+BEFORE UPDATE ON item_supplier
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_app_user_updated_at
+BEFORE UPDATE ON app_user
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_role_updated_at
+BEFORE UPDATE ON role
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_user_role_updated_at
+BEFORE UPDATE ON user_role
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_repair_service_updated_at
+BEFORE UPDATE ON repair_service
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_maintenance_ticket_updated_at
+BEFORE UPDATE ON maintenance_ticket
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_sale_updated_at
+BEFORE UPDATE ON sale
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_sale_item_updated_at
+BEFORE UPDATE ON sale_item
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_payment_updated_at
+BEFORE UPDATE ON payment
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_sync_queue_updated_at
+BEFORE UPDATE ON sync_queue
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_purchase_order_updated_at
+BEFORE UPDATE ON purchase_order
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_settings_updated_at
+BEFORE UPDATE ON settings
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER before_sale_insert
+BEFORE INSERT ON sale
+FOR EACH ROW EXECUTE FUNCTION set_sale_number();
+
+CREATE TRIGGER before_ticket_insert
+BEFORE INSERT ON maintenance_ticket
+FOR EACH ROW EXECUTE FUNCTION set_ticket_number();
+
+CREATE TRIGGER after_sale_insert_sync
+AFTER INSERT ON sale
+FOR EACH ROW EXECUTE FUNCTION enqueue_sale_sync();
+
+-- ========== VIEWS ==========
+
+CREATE VIEW inventory_summary AS
+SELECT
+  i.item_id,
+  i.name,
+  i.sku,
+  i.item_type,
+  c.name AS category,
+  i.min_stock_level,
+  i.reorder_quantity,
+  COALESCE(SUM(inv.quantity), 0) AS total_quantity,
+  string_agg(l.name || ': ' || inv.quantity::text, ', ') AS location_breakdown
+FROM item i
+LEFT JOIN inventory inv ON i.item_id = inv.item_id
+LEFT JOIN location l ON inv.location_id = l.location_id
+LEFT JOIN category c ON i.category_id = c.category_id
+GROUP BY i.item_id, i.name, i.sku, i.item_type, c.name, i.min_stock_level, i.reorder_quantity;
+
+CREATE VIEW parts_usage_report AS
+SELECT
+  i.item_id,
+  i.name AS part_name,
+  i.sku,
+  COALESCE(retail.retail_quantity, 0) AS retail_quantity,
+  COALESCE(maintenance.maintenance_quantity, 0) AS maintenance_quantity,
+  COALESCE(retail.retail_revenue, 0) AS retail_revenue,
+  COALESCE(maintenance.technicians_used_by, 0) AS technicians_used_by,
+  maintenance.technician_names AS technician_names
+FROM item i
+LEFT JOIN (
+  SELECT
+    si.item_id,
+    SUM(si.quantity) AS retail_quantity,
+    SUM(si.line_total) AS retail_revenue
+  FROM sale_item si
+  JOIN sale s ON s.sale_id = si.sale_id
+  WHERE s.sale_type = 'RETAIL'
+  GROUP BY si.item_id
+) retail ON retail.item_id = i.item_id
+LEFT JOIN (
+  SELECT
+    pu.part_id AS item_id,
+    SUM(pu.quantity_used) AS maintenance_quantity,
+    COUNT(DISTINCT pu.used_by) AS technicians_used_by,
+    string_agg(DISTINCT u.first_name, ', ') AS technician_names
+  FROM part_usage pu
+  LEFT JOIN app_user u ON pu.used_by = u.user_id
+  GROUP BY pu.part_id
+) maintenance ON maintenance.item_id = i.item_id
+WHERE i.item_type = 'SPARE_PART';
+
+CREATE VIEW maintenance_tickets_view AS
+SELECT
+  mt.ticket_id,
+  mt.ticket_number,
+  mt.status,
+  mt.priority,
+  c.name AS customer_name,
+  c.phone AS customer_phone,
+  COALESCE(cd.model, i.name) AS device_model,
+  cd.serial_number AS device_serial,
+  (u.first_name || ' ' || u.last_name) AS technician_name,
+  mt.problem_description,
+  mt.total_cost,
+  mt.created_at,
+  mt.estimated_completion,
+  mt.location_id
+FROM maintenance_ticket mt
+LEFT JOIN customer c ON mt.customer_id = c.customer_id
+LEFT JOIN customer_device cd ON mt.customer_device_id = cd.device_id
+LEFT JOIN item i ON cd.catalog_item_id = i.item_id
+LEFT JOIN app_user u ON mt.technician_id = u.user_id;
+
+-- ========== COMMENTS ==========
+
+COMMENT ON TABLE item IS 'Products and spare parts with enhanced maintenance tracking';
+COMMENT ON TABLE sale IS 'Sales headers for retail and maintenance invoices';
+COMMENT ON TABLE sale_item IS 'Line items for sales and maintenance invoices';
+COMMENT ON TABLE payment IS 'Payment history for sales, including refunds and adjustments';
+COMMENT ON TABLE maintenance_ticket IS 'Repair jobs with status tracking and cost calculation';
+COMMENT ON TABLE part_usage IS 'Source of truth for parts consumed in maintenance repairs';
+COMMENT ON TABLE sync_queue IS 'Queue for offline sync operations between locations';
+COMMENT ON TABLE sync_conflict IS 'Records of sync conflicts requiring resolution';

@@ -1,0 +1,275 @@
+{
+  "app": {
+    "title": "Omega Inventory",
+    "tagline": "Electronics inventory, sales, and repairs in one place"
+  },
+  "nav": {
+    "inventory": "Inventory",
+    "sales": "Sales",
+    "maintenance": "Maintenance",
+    "reports": "Reports",
+    "settings": "Settings",
+    "menuOpen": "Menu",
+    "menuClose": "Close"
+  },
+  "home": {
+    "heading": "Inventory and repairs, working offline and online",
+    "subheading": "Start with core operations now. Add sync and offline workflows later without rewrites.",
+    "ctaPrimary": "Add Inventory Item",
+    "ctaSecondary": "Create Maintenance Ticket",
+    "snapshotTitle": "Operational Snapshot",
+    "highlightInventory": "Unified stock counts across locations with reorder thresholds.",
+    "highlightMaintenance": "Repair tickets with technician traceability and parts usage.",
+    "highlightSales": "Multi-item invoices with full payment history."
+  },
+  "inventory": {
+    "title": "Inventory",
+    "subtitle": "Manage products, spare parts, and stock levels.",
+    "formTitleAdd": "Add Inventory Item",
+    "formTitleEdit": "Update Item",
+    "manageCategories": "Manage categories",
+    "fields": {
+      "name": "Name",
+      "sku": "SKU",
+      "description": "Description",
+      "type": "Type",
+      "category": "Category",
+      "price": "Price",
+      "cost": "Cost",
+      "manufacturer": "Manufacturer",
+      "barcode": "Barcode",
+      "weight": "Weight (kg)",
+      "dimensions": "Dimensions",
+      "warrantyPeriod": "Warranty (months)",
+      "attachments": "Photos & Attachments",
+      "stockLocation": "Stock Location",
+      "minStock": "Min Stock",
+      "reorderQty": "Reorder Qty",
+      "forMaintenance": "For Maintenance",
+      "initialLocation": "Initial Location",
+      "quantity": "Quantity"
+    },
+    "options": {
+      "product": "Product",
+      "sparePart": "Spare Part",
+      "store": "Store",
+      "workshop": "Workshop",
+      "both": "Both",
+      "uncategorized": "Uncategorized",
+      "selectLocation": "Select location"
+    },
+    "actions": {
+      "add": "Add Item",
+      "save": "Save Changes",
+      "clear": "Clear",
+      "addCategory": "Add category",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "categoryForm": {
+      "title": "New category",
+      "name": "Category name",
+      "type": "Category type",
+      "description": "Description (optional)",
+      "save": "Save category",
+      "cancel": "Cancel"
+    },
+    "attachments": {
+      "helper": "Attach photos or PDFs. Saved when you save the item.",
+      "savedTitle": "Saved attachments",
+      "pendingTitle": "Pending attachments",
+      "empty": "No attachments yet.",
+      "reorderHint": "Drag to reorder",
+      "drag": "Drag",
+      "errors": {
+        "invalidType": "\"{name}\" has an unsupported file type.",
+        "tooLarge": "\"{name}\" is larger than 5 MB."
+      }
+    },
+    "validation": {
+      "errorsTitle": "Fix these errors",
+      "warningsTitle": "Review these warnings",
+      "nameRequired": "Name is required.",
+      "priceNonNegative": "Price must be 0 or higher.",
+      "costNonNegative": "Cost must be 0 or higher.",
+      "quantityNonNegative": "Quantity must be 0 or higher.",
+      "locationRequired": "Select an initial location when quantity is greater than 0.",
+      "minStockNonNegative": "Min stock must be 0 or higher.",
+      "reorderNonNegative": "Reorder quantity must be 0 or higher.",
+      "costHigherThanPrice": "Cost is higher than price.",
+      "reorderBelowMin": "Reorder quantity is below min stock level.",
+      "categoryNameRequired": "Category name is required."
+    },
+    "categories": {
+      "title": "Categories",
+      "subtitle": "Create, edit, and organize inventory categories.",
+      "back": "Back to inventory",
+      "newTitle": "Add category",
+      "listTitle": "All categories",
+      "empty": "No categories yet.",
+      "fields": {
+        "name": "Name",
+        "type": "Type",
+        "description": "Description",
+        "inUse": "Items in category"
+      },
+      "actions": {
+        "create": "Create",
+        "update": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "messages": {
+        "inUse": "Cannot delete while items are assigned.",
+        "nameRequired": "Category name is required."
+      }
+    },
+    "listTitle": "Current Items",
+    "empty": "No items yet. Add your first product or spare part.",
+    "totalStock": "Total stock"
+  },
+  "sales": {
+    "title": "Sales",
+    "subtitle": "Track invoices, payments, and retail activity.",
+    "listTitle": "Recent Sales",
+    "empty": "No sales recorded yet.",
+    "new": "New Sale",
+    "form": {
+      "title": "Create Sale",
+      "addLine": "Add Line",
+      "linesTitle": "Line Items",
+      "noLines": "Add at least one line item to create a sale."
+    },
+    "fields": {
+      "saleType": "Sale Type",
+      "status": "Status",
+      "paymentStatus": "Payment Status",
+      "location": "Location",
+      "customerId": "Customer ID",
+      "item": "Item",
+      "lineType": "Line Type",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "lineTotal": "Line Total",
+      "discount": "Discount",
+      "tax": "Tax",
+      "total": "Total",
+      "notes": "Notes"
+    },
+    "options": {
+      "retail": "Retail",
+      "maintenance": "Maintenance",
+      "internal": "Internal",
+      "open": "Open",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded",
+      "unpaid": "Unpaid",
+      "partial": "Partial",
+      "paid": "Paid",
+      "selectLocation": "Select location",
+      "selectItem": "Select item",
+      "product": "Product",
+      "sparePart": "Spare Part",
+      "labor": "Labor",
+      "fee": "Fee",
+      "adjustment": "Adjustment"
+    },
+    "placeholders": {
+      "customerId": "Optional"
+    },
+    "actions": {
+      "save": "Save Sale",
+      "clear": "Clear",
+      "removeLine": "Remove Line"
+    },
+    "messages": {
+      "locationRequired": "Select a location before saving.",
+      "lineRequired": "Add at least one line item.",
+      "saved": "Sale saved."
+    }
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "subtitle": "Manage repair tickets, technicians, and parts usage.",
+    "listTitle": "Active Tickets",
+    "empty": "No maintenance tickets yet.",
+    "new": "New Ticket",
+    "form": {
+      "title": "Create Ticket"
+    },
+    "fields": {
+      "customerName": "Customer Name",
+      "customerPhone": "Customer Phone",
+      "deviceModel": "Device Model",
+      "serial": "Serial Number",
+      "priority": "Priority",
+      "warranty": "Warranty",
+      "location": "Location",
+      "status": "Status",
+      "problem": "Problem Description"
+    },
+    "options": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "inWarranty": "In Warranty",
+      "outWarranty": "Out of Warranty",
+      "extended": "Extended",
+      "selectLocation": "Select location",
+      "pending": "Pending",
+      "diagnosis": "Diagnosis",
+      "waitingParts": "Waiting Parts",
+      "inProgress": "In Progress",
+      "testing": "Testing",
+      "completed": "Completed",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "save": "Save Ticket",
+      "clear": "Clear"
+    },
+    "messages": {
+      "locationRequired": "Select a location before saving.",
+      "saved": "Ticket saved."
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Reporting dashboards will live here.",
+    "placeholder": "Placeholder for inventory valuation, parts usage, and technician productivity reports.",
+    "cards": {
+      "items": "Total Items",
+      "lowStock": "Low Stock Items",
+      "salesTotal": "Sales Total",
+      "openTickets": "Open Tickets"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure taxes, locations, and system defaults.",
+    "placeholder": "Placeholder for configuration panels and user preferences.",
+    "general": {
+      "title": "General Settings"
+    },
+    "fields": {
+      "taxRate": "Tax Rate",
+      "location": "Default Location"
+    },
+    "options": {
+      "selectLocation": "Select location"
+    },
+    "actions": {
+      "save": "Save"
+    },
+    "messages": {
+      "saved": "Settings saved."
+    }
+  },
+  "lang": {
+    "label": "Language"
+  }
+}

@@ -1,0 +1,275 @@
+{
+  "app": {
+    "title": "ኦሜጋ መጋዘን",
+    "tagline": "የኤሌክትሮኒክስ እቃ መዝገብ፣ ሽያጭ እና ጥገና በአንድ ቦታ"
+  },
+  "nav": {
+    "inventory": "እቃ መዝገብ",
+    "sales": "ሽያጭ",
+    "maintenance": "ጥገና",
+    "reports": "ሪፖርቶች",
+    "settings": "ቅንብሮች",
+    "menuOpen": "ሜኑ",
+    "menuClose": "ዝጋ"
+  },
+  "home": {
+    "heading": "እቃ እና ጥገና በመስመር ላይ ወይም ያለመስመር ላይ",
+    "subheading": "አሁን ዋና ክንውኖችን ጀምሩ፤ በኋላ ስምምነት እና ከመስመር ውጭ ስራ ያክሉ ሳይደገፉ።",
+    "ctaPrimary": "አዲስ እቃ ያክሉ",
+    "ctaSecondary": "የጥገና ቲኬት ፍጠሩ",
+    "snapshotTitle": "የክንውን አጭር መግለጫ",
+    "highlightInventory": "በቦታ መካከል የተቀናበረ የእቃ ብዛት እና የመደብ ደረጃዎች።",
+    "highlightMaintenance": "የጥገና ቲኬቶች ከቴክኒሺዎች መከታተያ እና የእቃ ተጠቃሚነት ጋር።",
+    "highlightSales": "ብዙ እቃ ያለው ደረሰኝ እና ሙሉ የክፍያ ታሪክ።"
+  },
+  "inventory": {
+    "title": "እቃ መዝገብ",
+    "subtitle": "እቃዎችን፣ መለዋወጫዎችን እና የእቃ ብዛትን ያስተዳድሩ።",
+    "formTitleAdd": "አዲስ እቃ ያክሉ",
+    "formTitleEdit": "እቃ ያዘምኑ",
+    "manageCategories": "ምድቦችን ያስተዳድሩ",
+    "fields": {
+      "name": "ስም",
+      "sku": "SKU",
+      "description": "መግለጫ",
+      "type": "አይነት",
+      "category": "ምድብ",
+      "price": "ዋጋ",
+      "cost": "ወጪ",
+      "manufacturer": "አምራች",
+      "barcode": "ባርኮድ",
+      "weight": "ክብደት (ኪ.ግ)",
+      "dimensions": "መጠኖች",
+      "warrantyPeriod": "የዋስትና ጊዜ (ወራት)",
+      "attachments": "ፎቶዎች እና አባሪዎች",
+      "stockLocation": "የእቃ ቦታ",
+      "minStock": "ዝቅተኛ መጠን",
+      "reorderQty": "የእንደገና ግዢ ብዛት",
+      "forMaintenance": "ለጥገና",
+      "initialLocation": "መጀመሪያ ቦታ",
+      "quantity": "ብዛት"
+    },
+    "options": {
+      "product": "ምርት",
+      "sparePart": "መለዋወጫ",
+      "store": "መደብር",
+      "workshop": "ወርክሾፕ",
+      "both": "ሁለቱም",
+      "uncategorized": "ያልተመደበ",
+      "selectLocation": "ቦታ ይምረጡ"
+    },
+    "actions": {
+      "add": "እቃ ያክሉ",
+      "save": "ለውጦችን ያስቀምጡ",
+      "clear": "አጥፋ",
+      "addCategory": "ምድብ ጨምር",
+      "edit": "አርትዕ",
+      "delete": "ሰርዝ"
+    },
+    "categoryForm": {
+      "title": "አዲስ ምድብ",
+      "name": "የምድብ ስም",
+      "type": "የምድብ አይነት",
+      "description": "መግለጫ (አማራጭ)",
+      "save": "ምድብ አስቀምጥ",
+      "cancel": "አቋርጥ"
+    },
+    "attachments": {
+      "helper": "ፎቶ ወይም PDF ያክሉ። እቃውን ሲያስቀምጡ ይቀመጣሉ።",
+      "savedTitle": "የተቀመጡ አባሪዎች",
+      "pendingTitle": "ለመቀመጥ ተጠባቂ አባሪዎች",
+      "empty": "አባሪ አልተጨመረም።",
+      "reorderHint": "ለመደርደር ይጎትቱ",
+      "drag": "ጎትት",
+      "errors": {
+        "invalidType": "\"{name}\" ያልተደገፈ የፋይል አይነት ነው።",
+        "tooLarge": "\"{name}\" ከ5 MB በላይ ነው።"
+      }
+    },
+    "validation": {
+      "errorsTitle": "የማስተካከያ ስህተቶች",
+      "warningsTitle": "የማስጠንቀቂያ ማስታወቂያዎች",
+      "nameRequired": "ስም ያስፈልጋል።",
+      "priceNonNegative": "ዋጋ 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "costNonNegative": "ወጪ 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "quantityNonNegative": "ብዛት 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "locationRequired": "ብዛት 0 በላይ ሲሆን መጀመሪያ ቦታ ይምረጡ።",
+      "minStockNonNegative": "ዝቅተኛ መጠን 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "reorderNonNegative": "የእንደገና ግዢ ብዛት 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "costHigherThanPrice": "ወጪ ከዋጋ በላይ ነው።",
+      "reorderBelowMin": "የእንደገና ግዢ ብዛት ከዝቅተኛ መጠን በታች ነው።",
+      "categoryNameRequired": "የምድብ ስም ያስፈልጋል።"
+    },
+    "categories": {
+      "title": "ምድቦች",
+      "subtitle": "የእቃ ምድቦችን ይፍጠሩ፣ ያስተካክሉ እና ያደራጁ።",
+      "back": "ወደ እቃ መዝገብ ተመለስ",
+      "newTitle": "ምድብ ጨምር",
+      "listTitle": "ሁሉም ምድቦች",
+      "empty": "ምድብ አልተጨመረም።",
+      "fields": {
+        "name": "ስም",
+        "type": "አይነት",
+        "description": "መግለጫ",
+        "inUse": "በምድብ ውስጥ ያሉ እቃዎች"
+      },
+      "actions": {
+        "create": "ፍጠር",
+        "update": "አስቀምጥ",
+        "cancel": "አቋርጥ",
+        "edit": "አርትዕ",
+        "delete": "ሰርዝ"
+      },
+      "messages": {
+        "inUse": "እቃዎች በላይ ሲሆኑ ማጥፋት አይቻልም።",
+        "nameRequired": "የምድብ ስም ያስፈልጋል።"
+      }
+    },
+    "listTitle": "አሁን ያሉ እቃዎች",
+    "empty": "እስካሁን እቃ የለም። መጀመሪያ ምርትዎን ያክሉ።",
+    "totalStock": "ጠቅላላ እቃ"
+  },
+  "sales": {
+    "title": "ሽያጭ",
+    "subtitle": "ደረሰኞችን፣ ክፍያዎችን እና የሽያጭ እንቅስቃሴን ተከታትሉ።",
+    "listTitle": "የቅርብ ጊዜ ሽያጭ",
+    "empty": "እስካሁን ሽያጭ የለም።",
+    "new": "አዲስ ሽያጭ",
+    "form": {
+      "title": "ሽያጭ ፍጠር",
+      "addLine": "መስመር ጨምር",
+      "linesTitle": "የእቃ መስመሮች",
+      "noLines": "ሽያጭ ለማስቀመጥ ቢያንስ አንድ መስመር ያክሉ።"
+    },
+    "fields": {
+      "saleType": "የሽያጭ አይነት",
+      "status": "ሁኔታ",
+      "paymentStatus": "የክፍያ ሁኔታ",
+      "location": "ቦታ",
+      "customerId": "የደንበኛ መለያ",
+      "item": "እቃ",
+      "lineType": "የመስመር አይነት",
+      "quantity": "ብዛት",
+      "unitPrice": "የአንድ ዋጋ",
+      "lineTotal": "የመስመር ድምር",
+      "discount": "ቅናሽ",
+      "tax": "ታክስ",
+      "total": "ድምር",
+      "notes": "ማስታወሻ"
+    },
+    "options": {
+      "retail": "ችርቻሮ",
+      "maintenance": "ጥገና",
+      "internal": "ውስጣዊ",
+      "open": "ክፍት",
+      "completed": "ተጠናቀቀ",
+      "cancelled": "ተሰርዟል",
+      "refunded": "ተመለሰ",
+      "unpaid": "ያልተከፈለ",
+      "partial": "በከፊል",
+      "paid": "ተከፍሏል",
+      "selectLocation": "ቦታ ይምረጡ",
+      "selectItem": "እቃ ይምረጡ",
+      "product": "ምርት",
+      "sparePart": "መለዋወጫ",
+      "labor": "ሥራ ክፍያ",
+      "fee": "ክፍያ",
+      "adjustment": "ማስተካከያ"
+    },
+    "placeholders": {
+      "customerId": "አማራጭ"
+    },
+    "actions": {
+      "save": "ሽያጭ አስቀምጥ",
+      "clear": "አጥፋ",
+      "removeLine": "መስመር አስወግድ"
+    },
+    "messages": {
+      "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
+      "lineRequired": "ቢያንስ አንድ መስመር ያክሉ።",
+      "saved": "ሽያጭ ተቀምጧል።"
+    }
+  },
+  "maintenance": {
+    "title": "ጥገና",
+    "subtitle": "የጥገና ቲኬቶችን፣ ቴክኒሺዎችን እና የእቃ አጠቃቀምን ያስተዳድሩ።",
+    "listTitle": "ንቁ ቲኬቶች",
+    "empty": "እስካሁን የጥገና ቲኬት የለም።",
+    "new": "አዲስ ቲኬት",
+    "form": {
+      "title": "ቲኬት ፍጠር"
+    },
+    "fields": {
+      "customerName": "የደንበኛ ስም",
+      "customerPhone": "የደንበኛ ስልክ",
+      "deviceModel": "የመሣሪያ ሞዴል",
+      "serial": "ሴሪያል ቁጥር",
+      "priority": "ቅድሚያ",
+      "warranty": "ዋስትና",
+      "location": "ቦታ",
+      "status": "ሁኔታ",
+      "problem": "የችግር መግለጫ"
+    },
+    "options": {
+      "low": "ዝቅተኛ",
+      "medium": "መካከለኛ",
+      "high": "ከፍተኛ",
+      "urgent": "አስቸኳይ",
+      "inWarranty": "በዋስትና",
+      "outWarranty": "ውጭ ዋስትና",
+      "extended": "ተራዘመ",
+      "selectLocation": "ቦታ ይምረጡ",
+      "pending": "በመጠባበቅ",
+      "diagnosis": "ምርመራ",
+      "waitingParts": "መለዋወጫ በመጠባበቅ",
+      "inProgress": "በሂደት ላይ",
+      "testing": "ሙከራ",
+      "completed": "ተጠናቀቀ",
+      "delivered": "ተሰጥቷል",
+      "cancelled": "ተሰርዟል"
+    },
+    "actions": {
+      "save": "ቲኬት አስቀምጥ",
+      "clear": "አጥፋ"
+    },
+    "messages": {
+      "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
+      "saved": "ቲኬት ተቀምጧል።"
+    }
+  },
+  "reports": {
+    "title": "ሪፖርቶች",
+    "subtitle": "የሪፖርት ዳሽቦርዶች እዚህ ይመጣሉ።",
+    "placeholder": "የእቃ ግምገማ፣ የእቃ አጠቃቀም እና የቴክኒሺዎች ምርታማነት ሪፖርቶች ለዚህ ቦታ ይመጣሉ።",
+    "cards": {
+      "items": "ጠቅላላ እቃዎች",
+      "lowStock": "ዝቅተኛ እቃ",
+      "salesTotal": "የሽያጭ ድምር",
+      "openTickets": "ክፍት ቲኬቶች"
+    }
+  },
+  "settings": {
+    "title": "ቅንብሮች",
+    "subtitle": "ግብር፣ ቦታዎች እና የስርዓት ቅንብሮችን ያዘጋጁ።",
+    "placeholder": "የቅንብር ፓነሎች እና የተጠቃሚ ምርጫዎች እዚህ ይመጣሉ።",
+    "general": {
+      "title": "አጠቃላይ ቅንብሮች"
+    },
+    "fields": {
+      "taxRate": "የግብር መጠን",
+      "location": "ነባሪ ቦታ"
+    },
+    "options": {
+      "selectLocation": "ቦታ ይምረጡ"
+    },
+    "actions": {
+      "save": "አስቀምጥ"
+    },
+    "messages": {
+      "saved": "ቅንብሮች ተቀምጠዋል።"
+    }
+  },
+  "lang": {
+    "label": "ቋንቋ"
+  }
+}

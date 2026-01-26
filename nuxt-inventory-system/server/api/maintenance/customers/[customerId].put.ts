@@ -1,0 +1,32 @@
+import { getPrismaClient } from '~/server/utils/prisma'
+import { mapCustomer } from '~/server/utils/mappers'
+
+export default defineEventHandler(async (event) => {
+  const prisma = getPrismaClient()
+  const customerId = event.context.params?.customerId
+  if (!customerId) {
+    throw createError({ statusCode: 400, statusMessage: 'CUSTOMER_ID_REQUIRED' })
+  }
+
+  const body = await readBody(event)
+  if (!body?.name) {
+    throw createError({ statusCode: 400, statusMessage: 'NAME_REQUIRED' })
+  }
+
+  const customer = await prisma.customer.update({
+    where: { customer_id: customerId },
+    data: {
+      name: body.name,
+      name_amharic: body.name_amharic ?? null,
+      email: body.email ?? null,
+      phone: body.phone ?? null,
+      tin: body.tin ?? null,
+      vat_registration_no: body.vat_registration_no ?? null,
+      address_id: body.address_id ?? null,
+      customer_type: body.customer_type ?? null,
+      sync_status: 'SYNCED'
+    }
+  })
+
+  return mapCustomer(customer)
+})

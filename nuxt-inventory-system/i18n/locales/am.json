@@ -7,6 +7,7 @@
     "inventory": "እቃ መዝገብ",
     "sales": "ሽያጭ",
     "maintenance": "ጥገና",
+    "partRequests": "የመለዋወጫ ጥያቄዎች",
     "reports": "ሪፖርቶች",
     "settings": "ቅንብሮች",
     "menuOpen": "ሜኑ",
@@ -28,20 +29,41 @@
     "formTitleAdd": "አዲስ እቃ ያክሉ",
     "formTitleEdit": "እቃ ያዘምኑ",
     "manageCategories": "ምድቦችን ያስተዳድሩ",
+    "manageCostSheet": "የወጪ ሉህ ያስተዳድሩ",
+    "manageLocations": "ቦታዎችን ያስተዳድሩ",
+    "manageStockCards": "የእቃ ካርዶችን ይመልከቱ",
+    "manageTransfers": "የእቃ ማስተላለፊያ",
     "fields": {
       "name": "ስም",
+      "model": "ሞዴል",
+      "serialNumber": "ሴሪያል ቁጥር",
       "sku": "SKU",
+      "vendorSku": "የአቅራቢ SKU",
       "description": "መግለጫ",
       "type": "አይነት",
       "category": "ምድብ",
       "price": "ዋጋ",
       "cost": "ወጪ",
+      "pricingMode": "የዋጋ አማራጭ",
+      "lastCost": "የመጨረሻ ወጪ",
+      "marginPercent": "ትርፍ (%)",
+      "lastReceipt": "የመጨረሻ ተቀባይነት",
+      "noReceiptsYet": "እስካሁን ተቀባይነት የለም።",
+      "priceOverrideReason": "የዋጋ ለውጥ ምክንያት",
+      "priceUpdatedAt": "ዋጋ የተዘመነበት",
+      "priceUpdatedAtEmpty": "አልተመዘገበም",
+      "unit": "መለኪያ",
       "manufacturer": "አምራች",
       "barcode": "ባርኮድ",
       "weight": "ክብደት (ኪ.ግ)",
       "dimensions": "መጠኖች",
       "warrantyPeriod": "የዋስትና ጊዜ (ወራት)",
       "attachments": "ፎቶዎች እና አባሪዎች",
+      "receiveStock": "እቃ ተቀበል",
+      "receivedDate": "የተቀበለበት ቀን",
+      "receivedLocation": "የተቀበለበት ቦታ",
+      "quantityReceived": "የተቀበለ ብዛት",
+      "unitCost": "የአንድ ዋጋ",
       "stockLocation": "የእቃ ቦታ",
       "minStock": "ዝቅተኛ መጠን",
       "reorderQty": "የእንደገና ግዢ ብዛት",
@@ -49,20 +71,94 @@
       "initialLocation": "መጀመሪያ ቦታ",
       "quantity": "ብዛት"
     },
+    "costSheet": {
+      "title": "የወጪ ሉህ",
+      "entry": "የወጪ ሉህ መዝገብ",
+      "manualEntry": "በእጅ መግባት",
+      "noEntries": "የወጪ ሉህ መዝገብ የለም።",
+      "manage": "የወጪ ሉህ ያስተዳድሩ",
+      "quantity": "ብዛት",
+      "unitCost": "የአንድ ወጪ",
+      "totalWithVat": "ድምር (ቫት ጨምሮ)",
+      "vatRate": "የቫት መጠን: {rate}%"
+    },
+    "costSheetPage": {
+      "title": "የወጪ ሉህ",
+      "subtitle": "እቃዎችን ወደ እቃ መዝገብ ሳትጨምሩ የዋጋ መሠረት ያዘጋጁ።",
+      "back": "ወደ እቃ መዝገብ ተመለስ",
+      "backToList": "ወደ ወጪ ሉህ ተመለስ",
+      "newTitle": "አዲስ የወጪ ሉህ መዝገብ",
+      "editTitle": "የወጪ ሉህ መዝገብ አርትዕ",
+      "listTitle": "የወጪ ሉህ ዝርዝር",
+      "empty": "የወጪ ሉህ መዝገብ የለም።",
+      "vatRate": "የቫት መጠን: {rate}%",
+      "fields": {
+        "date": "ቀን",
+        "itemName": "የእቃ ስም",
+        "model": "ሞዴል",
+        "unit": "መለኪያ",
+        "quantity": "ብዛት",
+        "unitCost": "የአንድ ወጪ",
+        "totalWithVat": "ድምር (ቫት ጨምሮ)",
+        "added": "ወደ እቃ መዝገብ ተጨመረ"
+      },
+      "actions": {
+        "create": "መዝግብ ፍጠር",
+        "new": "አዲስ መዝገብ",
+        "edit": "አርትዕ",
+        "update": "መዝግብ አዘምን",
+        "cancelEdit": "አርትዕ ተው",
+        "clear": "አጥፋ",
+        "addToInventory": "ወደ እቃ መዝገብ ጨምር"
+      },
+      "list": {
+        "searchPlaceholder": "የወጪ ሉህ ፈልግ",
+        "noResults": "የሚዛመዱ የወጪ ሉህ መዝገቦች የሉም።",
+        "status": "ሁኔታ",
+        "actions": "እርምጃዎች"
+      },
+      "badges": {
+        "added": "ተጨመረ",
+        "pending": "አልተጨመረም"
+      },
+      "validation": {
+        "dateRequired": "ቀን አስፈላጊ ነው።",
+        "itemNameRequired": "የእቃ ስም አስፈላጊ ነው።",
+        "modelRequired": "ሞዴል አስፈላጊ ነው።",
+        "unitRequired": "መለኪያ አስፈላጊ ነው።",
+        "quantityRequired": "ብዛት ከ 0 በላይ መሆን አለበት።",
+        "unitCostNonNegative": "የአንድ ወጪ 0 ወይም ከዚያ በላይ መሆን አለበት።",
+        "cannotEditAdded": "ይህ መዝገብ ቀድሞ ወደ እቃ መዝገብ ተጨምሯል። መቀየር አይቻልም።",
+        "saveFailed": "የወጪ ሉህ መዝገብ ማስቀመጥ አልተቻለም።"
+      }
+    },
     "options": {
       "product": "ምርት",
       "sparePart": "መለዋወጫ",
       "store": "መደብር",
       "workshop": "ወርክሾፕ",
+      "warehouse": "መጋዘን",
       "both": "ሁለቱም",
       "uncategorized": "ያልተመደበ",
+      "selectUnit": "መለኪያ ይምረጡ",
+      "manualPrice": "በእጅ የተገባ ዋጋ",
+      "marginPrice": "በትርፍ መቶኛ",
+      "priceList": "የዋጋ ዝርዝር",
+      "costSheetPrice": "የወጪ ሉህ",
       "selectLocation": "ቦታ ይምረጡ"
+    },
+    "placeholders": {
+      "unit": "ቁራጭ, ሮል, ሳጥን"
     },
     "actions": {
       "add": "እቃ ያክሉ",
       "save": "ለውጦችን ያስቀምጡ",
       "clear": "አጥፋ",
+      "backToList": "ወደ እቃ መዝገብ ተመለስ",
+      "stockCard": "የእቃ ካርድ",
       "addCategory": "ምድብ ጨምር",
+      "addLocation": "ቦታ ጨምር",
+      "addUnit": "መለኪያ ጨምር",
       "edit": "አርትዕ",
       "delete": "ሰርዝ"
     },
@@ -74,6 +170,24 @@
       "save": "ምድብ አስቀምጥ",
       "cancel": "አቋርጥ"
     },
+    "locationForm": {
+      "title": "አዲስ ቦታ",
+      "name": "የቦታ ስም",
+      "type": "የቦታ አይነት",
+      "subCity": "ክፍለ ከተማ",
+      "houseNo": "የቤት ቁጥር",
+      "city": "ከተማ",
+      "country": "አገር",
+      "poBox": "ፖ.ቦ.ቁ",
+      "save": "ቦታ አስቀምጥ",
+      "cancel": "አቋርጥ"
+    },
+    "unitForm": {
+      "title": "አዲስ መለኪያ",
+      "name": "የመለኪያ ስም",
+      "save": "መለኪያ አስቀምጥ",
+      "cancel": "አቋርጥ"
+    },
     "attachments": {
       "helper": "ፎቶ ወይም PDF ያክሉ። እቃውን ሲያስቀምጡ ይቀመጣሉ።",
       "savedTitle": "የተቀመጡ አባሪዎች",
@@ -81,6 +195,9 @@
       "empty": "አባሪ አልተጨመረም።",
       "reorderHint": "ለመደርደር ይጎትቱ",
       "drag": "ጎትት",
+      "preview": "ቅድመ እይታ",
+      "download": "አውርድ",
+      "close": "ዝጋ",
       "errors": {
         "invalidType": "\"{name}\" ያልተደገፈ የፋይል አይነት ነው።",
         "tooLarge": "\"{name}\" ከ5 MB በላይ ነው።"
@@ -90,15 +207,39 @@
       "errorsTitle": "የማስተካከያ ስህተቶች",
       "warningsTitle": "የማስጠንቀቂያ ማስታወቂያዎች",
       "nameRequired": "ስም ያስፈልጋል።",
+      "modelRequired": "ሞዴል ያስፈልጋል።",
+      "unitRequired": "መለኪያ ያስፈልጋል።",
+      "typeRequired": "አይነት ያስፈልጋል።",
+      "categoryRequired": "ምድብ ያስፈልጋል።",
+      "locationRequired": "ቦታ ያስፈልጋል።",
+      "priceRequired": "ዋጋ ከ 0 በላይ መሆን አለበት።",
       "priceNonNegative": "ዋጋ 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "costNonNegative": "ወጪ 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "quantityNonNegative": "ብዛት 0 ወይም ከዚያ በላይ መሆን አለበት።",
-      "locationRequired": "ብዛት 0 በላይ ሲሆን መጀመሪያ ቦታ ይምረጡ።",
       "minStockNonNegative": "ዝቅተኛ መጠን 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "reorderNonNegative": "የእንደገና ግዢ ብዛት 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "receiptDateRequired": "እቃ ሲቀበሉ ቀን ያስፈልጋል።",
+      "receiptLocationRequired": "የተቀበለበትን ቦታ ይምረጡ።",
+      "unitCostNonNegative": "የአንድ ዋጋ 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "marginNonNegative": "ትርፍ 0 ወይም ከዚያ በላይ መሆን አለበት።",
+      "costSheetQuantityRequired": "የወጪ ሉህ ብዛት ከ 0 በላይ መሆን አለበት።",
+      "costSheetUnitCostNonNegative": "የወጪ ሉህ የአንድ ወጪ 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "costHigherThanPrice": "ወጪ ከዋጋ በላይ ነው።",
       "reorderBelowMin": "የእንደገና ግዢ ብዛት ከዝቅተኛ መጠን በታች ነው።",
-      "categoryNameRequired": "የምድብ ስም ያስፈልጋል።"
+      "duplicateItem": "ተመሳሳይ ስም እና ሞዴል ያለው እቃ አስቀድሞ አለ።",
+      "duplicateItemNeedsReceipt": "እቃው አስቀድሞ አለ። እባክዎ የተቀበለ ብዛት ያስገቡ።",
+      "skuExists": "ይህ SKU አስቀድሞ አለ። ሌላ ይምረጡ።",
+      "costSheetAlreadyUsed": "የወጪ ሉህ መዝገቡ ቀድሞ ወደ እቃ መዝገብ ተጨምሯል።",
+      "costSheetNotFound": "የወጪ ሉህ መዝገብ አልተገኘም።",
+      "saveFailed": "እቃውን ማስቀመጥ አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+      "categoryNameRequired": "የምድብ ስም ያስፈልጋል።",
+      "locationNameRequired": "የቦታ ስም ያስፈልጋል።",
+      "unitNameRequired": "የመለኪያ ስም ያስፈልጋል።"
+    },
+    "messages": {
+      "itemNotFound": "እቃው አልተገኘም።",
+      "saved": "እቃ ተቀምጧል።",
+      "updated": "እቃ ተዘምኗል።"
     },
     "categories": {
       "title": "ምድቦች",
@@ -121,8 +262,137 @@
         "delete": "ሰርዝ"
       },
       "messages": {
-        "inUse": "እቃዎች በላይ ሲሆኑ ማጥፋት አይቻልም።",
+        "inUse": "እቃዎች ተመድበዋል። ከመሰረዝ በፊት ያስተላልፉ።",
         "nameRequired": "የምድብ ስም ያስፈልጋል።"
+      },
+      "reassignTitle": "እቃዎችን ከማጥፋት በፊት ያስተላልፉ",
+      "reassignDescription": "{count} እቃዎች ይህን ምድብ እያጠቀሙ ነው።",
+      "reassignLabel": "እቃዎችን ወደ",
+      "reassignHelp": "ሌላ ምድብ ይምረጡ ወይም ያልተመደበ አድርጉ።",
+      "reassignAction": "አስተላልፍ እና ሰርዝ"
+    },
+    "list": {
+      "searchPlaceholder": "እቃ፣ SKU ወይም ምድብ ይፈልጉ",
+      "locationLabel": "ቦታ",
+      "allLocations": "ሁሉም ቦታዎች",
+      "reserved": "ተያይዞ የተቀመጠ",
+      "available": "የሚገኝ",
+      "pageSize": "በገፅ ብዛት",
+      "showing": "በጠቅላላ {total} ውስጥ {start}-{end} እየታየ",
+      "noResults": "የሚዛመዱ እቃዎች አልተገኙም።",
+      "actions": "ተግባራት",
+      "prev": "ቀዳሚ",
+      "next": "ቀጣይ"
+    },
+    "locations": {
+      "title": "ቦታዎች",
+      "subtitle": "በመደብር እና ወርክሾፕ መካከል የእቃ ቦታዎችን ይግለጹ።",
+      "back": "ወደ እቃ መዝገብ ተመለስ",
+      "newTitle": "ቦታ ጨምር",
+      "listTitle": "ሁሉም ቦታዎች",
+      "empty": "ቦታ አልተጨመረም።",
+      "fields": {
+        "name": "ስም",
+        "type": "አይነት",
+        "subCity": "ክፍለ ከተማ",
+        "houseNo": "የቤት ቁጥር",
+        "houseNoShort": "ቤት",
+        "city": "ከተማ",
+        "country": "አገር",
+        "poBox": "ፖ.ቦ.ቁ",
+        "poBoxShort": "ፖ.ቦ.ቁ",
+        "inUse": "ቦታን የሚጠቀሙ መዝገቦች"
+      },
+      "actions": {
+        "create": "ፍጠር",
+        "update": "አስቀምጥ",
+        "cancel": "አቋርጥ",
+        "edit": "አርትዕ",
+        "delete": "ሰርዝ"
+      },
+      "messages": {
+        "inUse": "ይህ ቦታ በመጠቀም ላይ ነው፣ ማጥፋት አይቻልም።",
+        "nameRequired": "የቦታ ስም ያስፈልጋል።"
+      }
+    },
+    "stockCards": {
+      "title": "የእቃ ካርዶች",
+      "subtitle": "የተቀበሉ እቃዎች፣ የተሰጡ እቃዎች እና የቀረ ብዛት በእቃ መስመር ይመልከቱ።",
+      "back": "ወደ እቃ መዝገብ ተመለስ",
+      "empty": "እቃ አልተጨመረም።",
+      "filterLocation": "ቦታ",
+      "allLocations": "ሁሉም ቦታዎች",
+      "noTransactions": "የእቃ እንቅስቃሴ መዝገብ የለም።",
+      "fields": {
+        "sellingPrice": "የሽያጭ ዋጋ",
+        "cost": "ወጪ",
+        "onHand": "ቀሪ ብዛት",
+        "date": "ቀን",
+        "type": "አይነት",
+        "store": "መደብር",
+        "receivedQty": "የተቀበለ",
+        "issuedQty": "የተሰጠ",
+        "unitCost": "የአንድ ዋጋ",
+        "reference": "ማጣቀሻ",
+        "balance": "ቀሪ ብዛት"
+      },
+      "types": {
+        "receipt": "ተቀበለ",
+        "issue": "ሰጠ",
+        "sale": "ሽያጭ",
+        "transferIn": "ወደ ቦታ ግብይት",
+        "transferOut": "ከቦታ መውጫ",
+        "adjustment": "ማስተካከያ"
+      }
+    },
+    "transfers": {
+      "title": "የእቃ ማስተላለፊያ",
+      "subtitle": "እቃዎችን በቦታ መካከል ተንቀሳቀስ እና መዝገብ አስቀምጥ።",
+      "back": "ወደ እቃ መዝገብ ተመለስ",
+      "backToList": "ወደ ማስተላለፊያዎች ተመለስ",
+      "newTitle": "አዲስ የእቃ ማስተላለፊያ",
+      "detailTitle": "የእቃ ማስተላለፊያ ዝርዝር",
+      "detailSubtitle": "መዝገቡን፣ ማስታወሻዎችን እና አባሪዎችን ይመልከቱ።",
+      "detailEmpty": "ማስተላለፊያው አልተገኘም።",
+      "formTitle": "እቃ ማስተላለፍ",
+      "listTitle": "የማስተላለፊያ ታሪክ",
+      "fields": {
+        "item": "እቃ",
+        "fromLocation": "ከቦታ",
+        "toLocation": "ወደ ቦታ",
+        "quantity": "ብዛት",
+        "transferDate": "የማስተላለፊያ ቀን",
+        "reference": "ማጣቀሻ",
+        "available": "በመለኪያ ቦታ ያለው",
+        "notes": "ማስታወሻ",
+        "employeeName": "የሰራተኛ ስም",
+        "attachment": "የቲኬት አባሪ",
+        "attachmentSelected": "የተያዘ ፋይል",
+        "availableByLocation": "በቦታ ያለ ብዛት"
+      },
+      "actions": {
+        "submit": "ማስተላለፍ",
+        "clear": "አጥፋ",
+        "new": "አዲስ ማስተላለፊያ",
+        "removeAttachment": "አስወግድ"
+      },
+      "list": {
+        "searchPlaceholder": "ማስተላለፊያ ፈልግ",
+        "noResults": "የሚዛመዱ ማስተላለፊያዎች የሉም።",
+        "empty": "እስካሁን ማስተላለፊያ የለም።"
+      },
+      "validation": {
+        "itemRequired": "እቃ ይምረጡ።",
+        "fromLocationRequired": "መለኪያ ቦታ ይምረጡ።",
+        "toLocationRequired": "መድረሻ ቦታ ይምረጡ።",
+        "locationsDifferent": "መለኪያ እና መድረሻ ቦታ ተለይተው መሆን አለባቸው።",
+        "quantityRequired": "ብዛት 0 በላይ መሆን አለበት።",
+        "employeeRequired": "የሰራተኛ ስም ያስፈልጋል።",
+        "insufficientStock": "በመለኪያ ቦታ በቂ እቃ የለም።",
+        "attachmentTooLarge": "አባሪው ከ 5MB በታች መሆን አለበት።"
+      },
+      "messages": {
+        "success": "የእቃ ማስተላለፊያ ተመዝግቧል።"
       }
     },
     "listTitle": "አሁን ያሉ እቃዎች",
@@ -135,6 +405,20 @@
     "listTitle": "የቅርብ ጊዜ ሽያጭ",
     "empty": "እስካሁን ሽያጭ የለም።",
     "new": "አዲስ ሽያጭ",
+    "backToList": "ወደ ሽያጭ ተመለስ",
+    "list": {
+      "searchPlaceholder": "ሽያጭ ፈልግ",
+      "noResults": "የሚዛመዱ ሽያጮች አልተገኙም።",
+      "saleNumber": "የሽያጭ ቁጥር",
+      "customer": "ደንበኛ",
+      "date": "ቀን",
+      "type": "ዓይነት",
+      "status": "ሁኔታ",
+      "location": "ቦታ",
+      "total": "ድምር",
+      "actions": "እርምጃዎች",
+      "view": "አሳይ"
+    },
     "form": {
       "title": "ሽያጭ ፍጠር",
       "addLine": "መስመር ጨምር",
@@ -145,17 +429,26 @@
       "saleType": "የሽያጭ አይነት",
       "status": "ሁኔታ",
       "paymentStatus": "የክፍያ ሁኔታ",
+      "paymentMethod": "የክፍያ ዘዴ",
+      "receiptNumber": "የስራ ትእዛዝ ደረሰኝ ቁጥር",
+      "receiptAttachment": "የደረሰኝ ቅጂ",
       "location": "ቦታ",
       "customerId": "የደንበኛ መለያ",
+      "customerName": "የደንበኛ ስም",
+      "customerPhone": "የደንበኛ ስልክ",
+      "customerTin": "የደንበኛ ቲን",
+      "customerVatRegistration": "የደንበኛ የቫት መመዝገቢያ ቁጥር",
       "item": "እቃ",
       "lineType": "የመስመር አይነት",
       "quantity": "ብዛት",
+      "unit": "መለኪያ",
       "unitPrice": "የአንድ ዋጋ",
       "lineTotal": "የመስመር ድምር",
       "discount": "ቅናሽ",
-      "tax": "ታክስ",
+      "tax": "ቫት",
       "total": "ድምር",
-      "notes": "ማስታወሻ"
+      "notes": "ማስታወሻ",
+      "attachments": "አባሪዎች"
     },
     "options": {
       "retail": "ችርቻሮ",
@@ -168,6 +461,10 @@
       "unpaid": "ያልተከፈለ",
       "partial": "በከፊል",
       "paid": "ተከፍሏል",
+      "selectPaymentMethod": "የክፍያ ዘዴ ይምረጡ",
+      "paymentCash": "ጥሬ ገንዘብ",
+      "paymentTransfer": "ባንክ ማስተላለፊያ",
+      "paymentCheck": "ቼክ",
       "selectLocation": "ቦታ ይምረጡ",
       "selectItem": "እቃ ይምረጡ",
       "product": "ምርት",
@@ -182,12 +479,49 @@
     "actions": {
       "save": "ሽያጭ አስቀምጥ",
       "clear": "አጥፋ",
-      "removeLine": "መስመር አስወግድ"
+      "removeLine": "መስመር አስወግድ",
+      "removeAttachment": "አባሪ አስወግድ"
     },
     "messages": {
+      "receiptRequired": "የደረሰኝ ቁጥር ያስፈልጋል።",
+      "paymentMethodRequired": "የክፍያ ዘዴ ያስፈልጋል።",
       "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
       "lineRequired": "ቢያንስ አንድ መስመር ያክሉ።",
-      "saved": "ሽያጭ ተቀምጧል።"
+      "saved": "ሽያጭ ተቀምጧል።",
+      "insufficientStock": "ለአንዳንድ እቃዎች በቂ እቃ የለም።",
+      "discountNotAllowed": "ቅናሽ በቅንብሮች ውስጥ ተሰናክሏል።",
+      "attachmentTooLarge": "\"{name}\" ከ 5MB በላይ ነው።"
+    },
+    "summary": {
+      "discount": "ቅናሽ",
+      "vat": "ቫት",
+      "amountInWords": "በቃላት የተጻፈ መጠን",
+      "totalWithVat": "ቫትን ጨምሮ ድምር"
+    },
+    "detail": {
+      "title": "የሽያጭ ዝርዝር",
+      "subtitle": "የደረሰኝ መረጃን እና መስመሮችን ይመልከቱ።",
+      "loading": "የሽያጭ መረጃ በመጫን ላይ...",
+      "notFound": "ሽያጭ አልተገኘም።",
+      "summaryTitle": "የሽያጭ ማጠቃለያ",
+      "totalsTitle": "ድምሮች",
+      "lineItemsTitle": "የእቃ መስመሮች",
+      "saleNumber": "የሽያጭ ቁጥር",
+      "receiptNumber": "የደረሰኝ ቁጥር",
+      "saleDate": "ቀን",
+      "saleType": "የሽያጭ አይነት",
+      "status": "ሁኔታ",
+      "paymentStatus": "የክፍያ ሁኔታ",
+      "paymentMethod": "የክፍያ ዘዴ",
+      "location": "ቦታ",
+      "customerName": "የደንበኛ ስም",
+      "customerPhone": "የደንበኛ ስልክ",
+      "customerId": "የደንበኛ መለያ",
+      "customerTin": "የደንበኛ ቲን",
+      "customerVatRegistration": "የደንበኛ የቫት መመዝገቢያ ቁጥር",
+      "subtotal": "ከቅናሽ በፊት ድምር",
+      "total": "ድምር",
+      "customLine": "ልዩ መስመር"
     }
   },
   "maintenance": {
@@ -196,17 +530,43 @@
     "listTitle": "ንቁ ቲኬቶች",
     "empty": "እስካሁን የጥገና ቲኬት የለም።",
     "new": "አዲስ ቲኬት",
+    "backToList": "ወደ ጥገና ተመለስ",
+    "list": {
+      "searchPlaceholder": "ቲኬቶች ፈልግ",
+      "noResults": "የሚዛመዱ ቲኬቶች አልተገኙም።",
+      "receipt": "የደረሰኝ ቁጥር",
+      "customer": "ደንበኛ",
+      "device": "እቃ",
+      "status": "ሁኔታ",
+      "priority": "ቅድሚያ",
+      "received": "ተቀበለበት",
+      "location": "ቦታ",
+      "total": "ድምር",
+      "actions": "እርምጃዎች"
+    },
     "form": {
-      "title": "ቲኬት ፍጠር"
+      "title": "ቲኬት ፍጠር",
+      "editTitle": "ቲኬት አዘምን"
     },
     "fields": {
       "customerName": "የደንበኛ ስም",
+      "customerNameAmharic": "የደንበኛ ስም (አማርኛ)",
       "customerPhone": "የደንበኛ ስልክ",
+      "customerTin": "የደንበኛ ቲን",
+      "customerVatRegistration": "የደንበኛ የቫት መመዝገቢያ ቁጥር",
+      "itemName": "የእቃ ስም",
       "deviceModel": "የመሣሪያ ሞዴል",
       "serial": "ሴሪያል ቁጥር",
+      "receiptNumber": "የስራ ትእዛዝ ደረሰኝ ቁጥር",
+      "receiptAttachment": "የደረሰኝ ቁጥር (አባሪ)",
+      "attachments": "የቲኬት አባሪዎች",
+      "receivedDate": "የተቀበለበት ቀን",
+      "targetDeliveryDate": "የታሰበ የመስረከቢያ ቀን",
+      "actualDeliveredDate": "ትክክለኛ የተሰጠበት ቀን",
       "priority": "ቅድሚያ",
       "warranty": "ዋስትና",
       "location": "ቦታ",
+      "technician": "ቴክኒሺዎች",
       "status": "ሁኔታ",
       "problem": "የችግር መግለጫ"
     },
@@ -230,11 +590,127 @@
     },
     "actions": {
       "save": "ቲኬት አስቀምጥ",
+      "clear": "አጥፋ",
+      "edit": "አርትዕ",
+      "view": "አሳይ",
+      "update": "ቲኬት አዘምን",
+      "cancelEdit": "ሰርዝ",
+      "removeAttachment": "አባሪ አስወግድ"
+    },
+    "detail": {
+      "title": "የጥገና ቲኬት",
+      "subtitle": "የደንበኛ መረጃ፣ እቃ እና ድምሮችን ይመልከቱ።",
+      "loading": "ቲኬት በመጫን ላይ...",
+      "notFound": "ቲኬት አልተገኘም።",
+      "summaryTitle": "የቲኬት ማጠቃለያ",
+      "partsTitle": "የተጠየቁ መለዋወጫዎች",
+      "totalsTitle": "የቲኬት ድምር"
+    },
+    "totals": {
+      "title": "የቲኬት ድምር",
+      "parts": "የመለዋወጫ ድምር",
+      "labor": "የስራ ዋጋ",
+      "subtotal": "ድምር",
+      "vat": "ቫት",
+      "total": "ጠቅላላ (ቫት ጨምሮ)"
+    },
+    "partRequest": {
+      "title": "የመለዋወጫ ጥያቄ",
+      "selectTicket": "እቃ ለመጠየቅ ቲኬት ይምረጡ።",
+      "close": "ዝጋ",
+      "tabs": {
+        "internal": "ከመደብር እቃ",
+        "external": "ውጭ ግዢ"
+      },
+      "part": "መለዋወጫ",
+      "selectPart": "መለዋወጫ ይምረጡ",
+      "externalItemName": "የውጭ እቃ ስም",
+      "externalModel": "የውጭ ሞዴል",
+      "receiptNumber": "የደረሰኝ ቁጥር",
+      "externalCost": "የውጭ ዋጋ",
+      "receiptAttachment": "የደረሰኝ አባሪ",
+      "receiptAttachmentHelper": "አማራጭ። PDF, PNG ወይም JPG እስከ 5MB።",
+      "receiptSelected": "የደረሰኝ ፋይል ተመርጧል",
+      "receiptClear": "አስወግድ",
+      "receiptTooLarge": "የደረሰኝ ፋይል 5MB ወይም ከዚያ በታች መሆን አለበት።",
+      "inventoryPrice": "የመደብር ዋጋ",
+      "lineTotal": "የመስመር ድምር",
+      "quantity": "ብዛት",
+      "requestedBy": "ጠያቂ",
+      "source": "ምንጭ",
+      "sourceStore": "ከመደብር እቃ",
+      "sourceExternal": "ውጭ አቅራቢ",
+      "sourceCustomer": "በደንበኛ የቀረበ",
+      "status": "ሁኔታ",
+      "statusRequested": "ተጠይቋል",
+      "statusApproved": "ተፈቅዷል",
+      "statusRejected": "ተቀባይነት አልተሰጠም",
+      "statusFulfilled": "ተሟልቷል",
+      "statusCancelled": "ተሰርዟል",
+      "notes": "ማስታወሻ",
+      "submit": "ጥያቄ ላክ",
       "clear": "አጥፋ"
     },
+    "parts": {
+      "title": "የመለዋወጫ ጥያቄዎች",
+      "subtitle": "ከጥገና ቲኬቶች ጋር የተያያዙ መለዋወጫ ጥያቄዎችን ተከታትሉ።",
+      "formTitle": "አዲስ መለዋወጫ ጥያቄ",
+      "requestButton": "መለዋወጫ ጠይቅ",
+      "selectTicket": "ቲኬት",
+      "ticketPlaceholder": "ቲኬት ይምረጡ",
+      "ticketReceipt": "የደረሰኝ ቁጥር",
+      "ticketCustomer": "ደንበኛ",
+      "ticketDevice": "እቃ",
+      "ticketStatus": "ሁኔታ",
+      "ticketLocation": "ቦታ",
+      "listTitleTicket": "ለተመረጠው ቲኬት ጥያቄዎች",
+      "listTitleAll": "ሁሉም የመለዋወጫ ጥያቄዎች",
+      "searchPlaceholder": "መለዋወጫ ጥያቄዎች ፈልግ",
+      "empty": "እስካሁን የመለዋወጫ ጥያቄ የለም።",
+      "emptyTicket": "ለዚህ ቲኬት እስካሁን የመለዋወጫ ጥያቄ የለም።",
+      "noResults": "የሚዛመዱ መለዋወጫ ጥያቄዎች አልተገኙም።",
+      "viewAll": "ወደ የመለዋወጫ ጥያቄዎች ክፍል",
+      "columns": {
+        "item": "እቃ",
+        "source": "ምንጭ",
+        "quantity": "ብዛት",
+        "unitPrice": "የክፍያ ዋጋ / ወጪ",
+        "lineTotal": "የመስመር ድምር",
+        "status": "ሁኔታ",
+        "requestedBy": "ጠያቂ",
+        "requestedAt": "የተጠየቀበት ቀን",
+        "receipt": "የደረሰኝ ቁጥር",
+        "cost": "ዋጋ / ወጪ"
+      },
+      "totalLabel": "የመለዋወጫ ጠቅላላ ዋጋ"
+    },
     "messages": {
+      "customerRequired": "የደንበኛ ስም ያስፈልጋል።",
+      "deviceRequired": "የእቃ ስም እና ሞዴል ያስፈልጋሉ።",
+      "receiptRequired": "የደረሰኝ ቁጥር ያስፈልጋል።",
+      "receivedDateRequired": "የተቀበለበት ቀን ያስፈልጋል።",
+      "deliveredDateRequired": "ቲኬቱን ከመዝጋት በፊት ትክክለኛ የተሰጠበት ቀን ያስፈልጋል።",
+      "ticketLocked": "የተጠናቀቁ ቲኬቶች ለማየት ብቻ ናቸው።",
+      "partRequestTicketRequired": "መለዋወጫ ለመጠየቅ ቲኬት ይምረጡ።",
+      "partRequired": "መለዋወጫ ይምረጡ።",
+      "requestedByRequired": "ጠያቂ ያስፈልጋል።",
+      "technicianRequired": "ለጥያቄው ቴክኒሺው ያስፈልጋል።",
+      "partQuantityRequired": "ብዛት 1 ወይም ከዚያ በላይ መሆን አለበት።",
+      "externalItemRequired": "የውጭ እቃ ስም ያስፈልጋል።",
+      "externalReceiptRequired": "የደረሰኝ ቁጥር ያስፈልጋል።",
+      "externalCostRequired": "የውጭ ዋጋ 0 በላይ መሆን አለበት።",
+      "attachmentTooLarge": "\"{name}\" ከ 5MB በላይ ነው።",
+      "attachmentDeleteFailed": "አባሪውን ማስወገድ አልተሳካም።",
       "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
-      "saved": "ቲኬት ተቀምጧል።"
+      "saved": "ቲኬት ተቀምጧል።",
+      "updated": "ቲኬት ተዘምኗል።",
+      "partRequestSaved": "የመለዋወጫ ጥያቄ ተላክ።"
+    },
+    "attachments": {
+      "deleteTitle": "አባሪውን ማጥፋት?",
+      "deleteDescription": "\"{name}\"ን ከቲኬቱ ላይ ማስወገድ?",
+      "deleteConfirm": "አጥፋ",
+      "deleteCancel": "ተመለስ"
     }
   },
   "reports": {
@@ -256,11 +732,19 @@
       "title": "አጠቃላይ ቅንብሮች"
     },
     "fields": {
-      "taxRate": "የግብር መጠን",
+      "taxRate": "የቫት መጠን",
+      "defaultMargin": "ነባር ትርፍ (%)",
+      "salesDiscounts": "የሽያጭ ቅናሽ",
+      "businessName": "የንግድ ስም",
+      "supplierTin": "የአቅራቢ ቲን",
+      "vatRegistrationDate": "የቫት ምዝገባ ቀን",
+      "vatRegistrationNo": "የቫት ምዝገባ ቁጥር",
       "location": "ነባሪ ቦታ"
     },
     "options": {
-      "selectLocation": "ቦታ ይምረጡ"
+      "selectLocation": "ቦታ ይምረጡ",
+      "enabled": "ንቁ",
+      "disabled": "ዝም ያለ"
     },
     "actions": {
       "save": "አስቀምጥ"
@@ -271,5 +755,10 @@
   },
   "lang": {
     "label": "ቋንቋ"
+  },
+  "permissions": {
+    "noAccess": "ይህን ክፍል ለማየት ፍቃድ የለዎትም።",
+    "readOnly": "የማንበብ ብቻ ፍቃድ አለዎት።",
+    "restricted": "የተገደበ"
   }
 }

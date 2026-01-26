@@ -7,6 +7,7 @@
     "inventory": "Inventory",
     "sales": "Sales",
     "maintenance": "Maintenance",
+    "partRequests": "Part Requests",
     "reports": "Reports",
     "settings": "Settings",
     "menuOpen": "Menu",
@@ -28,26 +29,108 @@
     "formTitleAdd": "Add Inventory Item",
     "formTitleEdit": "Update Item",
     "manageCategories": "Manage categories",
+    "manageCostSheet": "Manage cost sheet",
+    "manageLocations": "Manage locations",
+    "manageStockCards": "View stock cards",
+    "manageTransfers": "Stock transfers",
     "fields": {
       "name": "Name",
+      "model": "Model",
+      "serialNumber": "Serial Number",
       "sku": "SKU",
+      "vendorSku": "Vendor SKU",
       "description": "Description",
       "type": "Type",
       "category": "Category",
       "price": "Price",
       "cost": "Cost",
+      "pricingMode": "Pricing mode",
+      "lastCost": "Last cost",
+      "marginPercent": "Margin (%)",
+      "lastReceipt": "Last receipt",
+      "noReceiptsYet": "No receipts yet.",
+      "priceOverrideReason": "Price override reason",
+      "priceUpdatedAt": "Price updated",
+      "priceUpdatedAtEmpty": "Not set",
+      "unit": "Unit",
       "manufacturer": "Manufacturer",
       "barcode": "Barcode",
       "weight": "Weight (kg)",
       "dimensions": "Dimensions",
       "warrantyPeriod": "Warranty (months)",
       "attachments": "Photos & Attachments",
+      "receiveStock": "Receive stock",
+      "receivedDate": "Received date",
+      "receivedLocation": "Received location",
+      "quantityReceived": "Quantity received",
+      "unitCost": "Unit cost",
       "stockLocation": "Stock Location",
       "minStock": "Min Stock",
       "reorderQty": "Reorder Qty",
       "forMaintenance": "For Maintenance",
       "initialLocation": "Initial Location",
       "quantity": "Quantity"
+    },
+    "costSheet": {
+      "title": "Cost Sheet",
+      "entry": "Cost sheet entry",
+      "manualEntry": "Manual entry",
+      "noEntries": "No cost sheet entries yet.",
+      "manage": "Manage cost sheet",
+      "quantity": "Quantity",
+      "unitCost": "Unit Cost",
+      "totalWithVat": "Total Price (VAT incl.)",
+      "vatRate": "VAT rate: {rate}%"
+    },
+    "costSheetPage": {
+      "title": "Cost sheet",
+      "subtitle": "Create pricing baselines before adding items to inventory.",
+      "back": "Back to inventory",
+      "backToList": "Back to cost sheet",
+      "newTitle": "New cost sheet entry",
+      "editTitle": "Edit cost sheet entry",
+      "listTitle": "Cost sheet entries",
+      "empty": "No cost sheet entries yet.",
+      "vatRate": "VAT rate: {rate}%",
+      "fields": {
+        "date": "Date",
+        "itemName": "Item name",
+        "model": "Model",
+        "unit": "Unit",
+        "quantity": "Quantity",
+        "unitCost": "Unit cost",
+        "totalWithVat": "Total price (VAT incl.)",
+        "added": "Added to inventory"
+      },
+      "actions": {
+        "create": "Create entry",
+        "new": "New entry",
+        "edit": "Edit",
+        "update": "Update entry",
+        "cancelEdit": "Cancel edit",
+        "clear": "Clear",
+        "addToInventory": "Add to inventory"
+      },
+      "list": {
+        "searchPlaceholder": "Search cost sheet",
+        "noResults": "No cost sheet entries match your search.",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "badges": {
+        "added": "Added",
+        "pending": "Not added"
+      },
+      "validation": {
+        "dateRequired": "Date is required.",
+        "itemNameRequired": "Item name is required.",
+        "modelRequired": "Model is required.",
+        "unitRequired": "Unit is required.",
+        "quantityRequired": "Quantity must be greater than 0.",
+        "unitCostNonNegative": "Unit cost must be 0 or higher.",
+        "cannotEditAdded": "This entry is already added to inventory and cannot be edited.",
+        "saveFailed": "Could not save cost sheet entry."
+      }
     },
     "options": {
       "product": "Product",
@@ -56,13 +139,26 @@
       "workshop": "Workshop",
       "both": "Both",
       "uncategorized": "Uncategorized",
+      "selectUnit": "Select unit",
+      "manualPrice": "Manual price",
+      "marginPrice": "Use margin %",
+      "priceList": "Use price list",
+      "costSheetPrice": "Use cost sheet",
+      "warehouse": "Warehouse",
       "selectLocation": "Select location"
+    },
+    "placeholders": {
+      "unit": "piece, roll, box"
     },
     "actions": {
       "add": "Add Item",
       "save": "Save Changes",
       "clear": "Clear",
+      "backToList": "Back to inventory",
+      "stockCard": "Stock card",
       "addCategory": "Add category",
+      "addLocation": "Add location",
+      "addUnit": "Add unit",
       "edit": "Edit",
       "delete": "Delete"
     },
@@ -74,6 +170,24 @@
       "save": "Save category",
       "cancel": "Cancel"
     },
+    "locationForm": {
+      "title": "New location",
+      "name": "Location name",
+      "type": "Location type",
+      "subCity": "Sub city",
+      "houseNo": "House no.",
+      "city": "City",
+      "country": "Country",
+      "poBox": "P.O. Box",
+      "save": "Save location",
+      "cancel": "Cancel"
+    },
+    "unitForm": {
+      "title": "New unit",
+      "name": "Unit name",
+      "save": "Save unit",
+      "cancel": "Cancel"
+    },
     "attachments": {
       "helper": "Attach photos or PDFs. Saved when you save the item.",
       "savedTitle": "Saved attachments",
@@ -81,6 +195,9 @@
       "empty": "No attachments yet.",
       "reorderHint": "Drag to reorder",
       "drag": "Drag",
+      "preview": "Preview",
+      "download": "Download",
+      "close": "Close",
       "errors": {
         "invalidType": "\"{name}\" has an unsupported file type.",
         "tooLarge": "\"{name}\" is larger than 5 MB."
@@ -90,15 +207,39 @@
       "errorsTitle": "Fix these errors",
       "warningsTitle": "Review these warnings",
       "nameRequired": "Name is required.",
+      "modelRequired": "Model is required.",
+      "unitRequired": "Unit is required.",
+      "typeRequired": "Type is required.",
+      "categoryRequired": "Category is required.",
+      "locationRequired": "Location is required.",
+      "priceRequired": "Price must be greater than 0.",
       "priceNonNegative": "Price must be 0 or higher.",
       "costNonNegative": "Cost must be 0 or higher.",
       "quantityNonNegative": "Quantity must be 0 or higher.",
-      "locationRequired": "Select an initial location when quantity is greater than 0.",
       "minStockNonNegative": "Min stock must be 0 or higher.",
       "reorderNonNegative": "Reorder quantity must be 0 or higher.",
+      "receiptDateRequired": "Received date is required when receiving stock.",
+      "receiptLocationRequired": "Select a location for the receipt.",
+      "unitCostNonNegative": "Unit cost must be 0 or higher.",
+      "marginNonNegative": "Margin must be 0 or higher.",
+      "costSheetQuantityRequired": "Cost sheet quantity must be greater than 0.",
+      "costSheetUnitCostNonNegative": "Cost sheet unit cost must be 0 or higher.",
       "costHigherThanPrice": "Cost is higher than price.",
       "reorderBelowMin": "Reorder quantity is below min stock level.",
-      "categoryNameRequired": "Category name is required."
+      "duplicateItem": "Item already exists (same name and model).",
+      "duplicateItemNeedsReceipt": "Item already exists. Enter a received quantity to add stock.",
+      "skuExists": "SKU already exists. Choose a different SKU.",
+      "costSheetAlreadyUsed": "Cost sheet entry already added to inventory.",
+      "costSheetNotFound": "Cost sheet entry not found.",
+      "saveFailed": "Unable to save the item. Please try again.",
+      "categoryNameRequired": "Category name is required.",
+      "locationNameRequired": "Location name is required.",
+      "unitNameRequired": "Unit name is required."
+    },
+    "messages": {
+      "itemNotFound": "Item not found.",
+      "saved": "Inventory item saved.",
+      "updated": "Inventory item updated."
     },
     "categories": {
       "title": "Categories",
@@ -121,8 +262,137 @@
         "delete": "Delete"
       },
       "messages": {
-        "inUse": "Cannot delete while items are assigned.",
+        "inUse": "Items are assigned. Reassign before deleting.",
         "nameRequired": "Category name is required."
+      },
+      "reassignTitle": "Reassign items before deleting",
+      "reassignDescription": "{count} items are still using this category.",
+      "reassignLabel": "Move items to",
+      "reassignHelp": "Select another category or leave uncategorized.",
+      "reassignAction": "Reassign and delete"
+    },
+    "list": {
+      "searchPlaceholder": "Search items, SKU, or category",
+      "locationLabel": "Location",
+      "allLocations": "All locations",
+      "reserved": "Reserved",
+      "available": "Available",
+      "pageSize": "Rows per page",
+      "showing": "Showing {start}-{end} of {total}",
+      "noResults": "No items match your search.",
+      "actions": "Actions",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "locations": {
+      "title": "Locations",
+      "subtitle": "Define where inventory lives across stores and workshops.",
+      "back": "Back to inventory",
+      "newTitle": "Add location",
+      "listTitle": "All locations",
+      "empty": "No locations yet.",
+      "fields": {
+        "name": "Name",
+        "type": "Type",
+        "subCity": "Sub city",
+        "houseNo": "House no.",
+        "houseNoShort": "House",
+        "city": "City",
+        "country": "Country",
+        "poBox": "P.O. Box",
+        "poBoxShort": "P.O. Box",
+        "inUse": "Records using location"
+      },
+      "actions": {
+        "create": "Create",
+        "update": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "messages": {
+        "inUse": "This location is in use and cannot be deleted.",
+        "nameRequired": "Location name is required."
+      }
+    },
+    "stockCards": {
+      "title": "Stock cards",
+      "subtitle": "Track receipts, issues, and running balances per item.",
+      "back": "Back to inventory",
+      "empty": "No items available yet.",
+      "filterLocation": "Location",
+      "allLocations": "All locations",
+      "noTransactions": "No stock transactions recorded.",
+      "fields": {
+        "sellingPrice": "Selling price",
+        "cost": "Cost",
+        "onHand": "On hand",
+        "date": "Date",
+        "type": "Type",
+        "store": "Store",
+        "receivedQty": "Received",
+        "issuedQty": "Issued",
+        "unitCost": "Unit cost",
+        "reference": "Reference",
+        "balance": "Balance"
+      },
+      "types": {
+        "receipt": "Received",
+        "issue": "Issued",
+        "sale": "Sale",
+        "transferIn": "Transfer in",
+        "transferOut": "Transfer out",
+        "adjustment": "Adjustment"
+      }
+    },
+    "transfers": {
+      "title": "Stock transfers",
+      "subtitle": "Move inventory between locations and capture ledger entries.",
+      "back": "Back to inventory",
+      "backToList": "Back to transfers",
+      "newTitle": "New stock transfer",
+      "detailTitle": "Stock transfer detail",
+      "detailSubtitle": "Review transfer metadata, notes, and attachments.",
+      "detailEmpty": "Transfer not found.",
+      "formTitle": "Transfer stock",
+      "listTitle": "Transfer history",
+      "fields": {
+        "item": "Item",
+        "fromLocation": "From location",
+        "toLocation": "To location",
+        "quantity": "Quantity",
+        "transferDate": "Transfer date",
+        "reference": "Reference",
+        "available": "Available at source",
+        "notes": "Notes",
+        "employeeName": "Employee name",
+        "attachment": "Ticket attachment",
+        "attachmentSelected": "Attached file",
+        "availableByLocation": "Available by location"
+      },
+      "actions": {
+        "submit": "Transfer",
+        "clear": "Clear",
+        "new": "New transfer",
+        "removeAttachment": "Remove"
+      },
+      "list": {
+        "searchPlaceholder": "Search transfers",
+        "noResults": "No transfers match your search.",
+        "empty": "No transfers yet."
+      },
+      "validation": {
+        "itemRequired": "Select an item.",
+        "fromLocationRequired": "Select a source location.",
+        "toLocationRequired": "Select a destination location.",
+        "locationsDifferent": "Source and destination locations must be different.",
+        "quantityRequired": "Quantity must be greater than 0.",
+        "employeeRequired": "Employee name is required.",
+        "insufficientStock": "Not enough stock at the source location.",
+        "attachmentTooLarge": "Attachment must be under 5 MB."
+      },
+      "messages": {
+        "success": "Stock transfer recorded."
       }
     },
     "listTitle": "Current Items",
@@ -135,6 +405,20 @@
     "listTitle": "Recent Sales",
     "empty": "No sales recorded yet.",
     "new": "New Sale",
+    "backToList": "Back to sales",
+    "list": {
+      "searchPlaceholder": "Search sales",
+      "noResults": "No sales match your search.",
+      "saleNumber": "Sale #",
+      "customer": "Customer",
+      "date": "Date",
+      "type": "Type",
+      "status": "Status",
+      "location": "Location",
+      "total": "Total",
+      "actions": "Actions",
+      "view": "View"
+    },
     "form": {
       "title": "Create Sale",
       "addLine": "Add Line",
@@ -145,17 +429,25 @@
       "saleType": "Sale Type",
       "status": "Status",
       "paymentStatus": "Payment Status",
+      "paymentMethod": "Payment Method",
+      "receiptNumber": "Receipt Number",
       "location": "Location",
       "customerId": "Customer ID",
+      "customerName": "Customer Name",
+      "customerPhone": "Customer Phone",
+      "customerTin": "Customer TIN",
+      "customerVatRegistration": "Customer VAT Reg. No.",
       "item": "Item",
       "lineType": "Line Type",
       "quantity": "Quantity",
+      "unit": "Unit",
       "unitPrice": "Unit Price",
       "lineTotal": "Line Total",
       "discount": "Discount",
-      "tax": "Tax",
+      "tax": "VAT",
       "total": "Total",
-      "notes": "Notes"
+      "notes": "Notes",
+      "attachments": "Attachments"
     },
     "options": {
       "retail": "Retail",
@@ -168,6 +460,10 @@
       "unpaid": "Unpaid",
       "partial": "Partial",
       "paid": "Paid",
+      "selectPaymentMethod": "Select payment method",
+      "paymentCash": "Cash",
+      "paymentTransfer": "Bank Transfer",
+      "paymentCheck": "Check",
       "selectLocation": "Select location",
       "selectItem": "Select item",
       "product": "Product",
@@ -182,12 +478,49 @@
     "actions": {
       "save": "Save Sale",
       "clear": "Clear",
-      "removeLine": "Remove Line"
+      "removeLine": "Remove Line",
+      "removeAttachment": "Remove attachment"
     },
     "messages": {
+      "receiptRequired": "Receipt number is required.",
+      "paymentMethodRequired": "Payment method is required.",
       "locationRequired": "Select a location before saving.",
       "lineRequired": "Add at least one line item.",
-      "saved": "Sale saved."
+      "saved": "Sale saved.",
+      "insufficientStock": "Not enough stock available for one or more items.",
+      "discountNotAllowed": "Discounts are currently disabled in settings.",
+      "attachmentTooLarge": "\"{name}\" exceeds 5 MB."
+    },
+    "summary": {
+      "discount": "Discount",
+      "vat": "VAT",
+      "amountInWords": "Amount in words",
+      "totalWithVat": "Total Including VAT"
+    },
+    "detail": {
+      "title": "Sale Details",
+      "subtitle": "Review the invoice, line items, and totals.",
+      "loading": "Loading sale details...",
+      "notFound": "Sale not found.",
+      "summaryTitle": "Sale Summary",
+      "totalsTitle": "Totals",
+      "lineItemsTitle": "Line Items",
+      "saleNumber": "Sale #",
+      "receiptNumber": "Receipt #",
+      "saleDate": "Date",
+      "saleType": "Sale Type",
+      "status": "Status",
+      "paymentStatus": "Payment Status",
+      "paymentMethod": "Payment Method",
+      "location": "Location",
+      "customerName": "Customer Name",
+      "customerPhone": "Customer Phone",
+      "customerId": "Customer ID",
+      "customerTin": "Customer TIN",
+      "customerVatRegistration": "Customer VAT Reg. No.",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "customLine": "Custom line"
     }
   },
   "maintenance": {
@@ -196,17 +529,43 @@
     "listTitle": "Active Tickets",
     "empty": "No maintenance tickets yet.",
     "new": "New Ticket",
+    "backToList": "Back to maintenance",
+    "list": {
+      "searchPlaceholder": "Search tickets",
+      "noResults": "No tickets match your search.",
+      "receipt": "Receipt #",
+      "customer": "Customer",
+      "device": "Item",
+      "status": "Status",
+      "priority": "Priority",
+      "received": "Received",
+      "location": "Location",
+      "total": "Total",
+      "actions": "Actions"
+    },
     "form": {
-      "title": "Create Ticket"
+      "title": "Create Ticket",
+      "editTitle": "Update Ticket"
     },
     "fields": {
       "customerName": "Customer Name",
+      "customerNameAmharic": "Customer Name (Amharic)",
       "customerPhone": "Customer Phone",
+      "customerTin": "Customer TIN",
+      "customerVatRegistration": "Customer VAT Reg. No.",
+      "itemName": "Item Name",
       "deviceModel": "Device Model",
       "serial": "Serial Number",
+      "receiptNumber": "Workorder Receipt Number",
+      "receiptAttachment": "Attachment Receipt Number",
+      "attachments": "Ticket Attachments",
+      "receivedDate": "Received Date",
+      "targetDeliveryDate": "Target Delivery Date",
+      "actualDeliveredDate": "Actual Delivered Date",
       "priority": "Priority",
       "warranty": "Warranty",
       "location": "Location",
+      "technician": "Technician",
       "status": "Status",
       "problem": "Problem Description"
     },
@@ -230,11 +589,127 @@
     },
     "actions": {
       "save": "Save Ticket",
+      "clear": "Clear",
+      "edit": "Edit",
+      "view": "View",
+      "update": "Update Ticket",
+      "cancelEdit": "Cancel",
+      "removeAttachment": "Remove attachment"
+    },
+    "detail": {
+      "title": "Maintenance Ticket",
+      "subtitle": "Review customer, device, parts, and totals.",
+      "loading": "Loading ticket...",
+      "notFound": "Ticket not found.",
+      "summaryTitle": "Ticket summary",
+      "partsTitle": "Parts requested",
+      "totalsTitle": "Ticket totals"
+    },
+    "totals": {
+      "title": "Ticket totals",
+      "parts": "Parts total",
+      "labor": "Labor cost",
+      "subtotal": "Subtotal",
+      "vat": "VAT",
+      "total": "Total (VAT incl.)"
+    },
+    "partRequest": {
+      "title": "Part Request",
+      "selectTicket": "Select a ticket to request parts.",
+      "close": "Close",
+      "tabs": {
+        "internal": "From inventory",
+        "external": "External purchase"
+      },
+      "part": "Part",
+      "selectPart": "Select part",
+      "externalItemName": "External item name",
+      "externalModel": "External model",
+      "receiptNumber": "Receipt Number",
+      "externalCost": "External cost",
+      "receiptAttachment": "Receipt attachment",
+      "receiptAttachmentHelper": "Optional. PDF, PNG, or JPG up to 5MB.",
+      "receiptSelected": "Receipt selected",
+      "receiptClear": "Remove",
+      "receiptTooLarge": "Receipt file must be 5MB or smaller.",
+      "inventoryPrice": "Inventory price",
+      "lineTotal": "Line total",
+      "quantity": "Quantity",
+      "requestedBy": "Requested By",
+      "source": "Source",
+      "sourceStore": "Store inventory",
+      "sourceExternal": "External supplier",
+      "sourceCustomer": "Customer provided",
+      "status": "Status",
+      "statusRequested": "Requested",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "statusFulfilled": "Fulfilled",
+      "statusCancelled": "Cancelled",
+      "notes": "Notes",
+      "submit": "Submit Request",
       "clear": "Clear"
     },
+    "parts": {
+      "title": "Part Requests",
+      "subtitle": "Request and track parts tied to maintenance tickets.",
+      "formTitle": "New Part Request",
+      "requestButton": "Request Parts",
+      "selectTicket": "Ticket",
+      "ticketPlaceholder": "Choose a ticket",
+      "ticketReceipt": "Receipt #",
+      "ticketCustomer": "Customer",
+      "ticketDevice": "Device",
+      "ticketStatus": "Status",
+      "ticketLocation": "Location",
+      "listTitleTicket": "Requests for Selected Ticket",
+      "listTitleAll": "All Part Requests",
+      "searchPlaceholder": "Search part requests",
+      "empty": "No part requests yet.",
+      "emptyTicket": "No part requests for this ticket yet.",
+      "noResults": "No part requests match your filters.",
+      "viewAll": "Open in Part Requests",
+      "columns": {
+        "item": "Item",
+        "source": "Source",
+        "quantity": "Quantity",
+        "unitPrice": "Unit price / cost",
+        "lineTotal": "Line total",
+        "status": "Status",
+        "requestedBy": "Requested By",
+        "requestedAt": "Requested At",
+        "receipt": "Receipt #",
+        "cost": "Price / Cost"
+      },
+      "totalLabel": "Total parts price"
+    },
     "messages": {
+      "customerRequired": "Customer name is required.",
+      "deviceRequired": "Item name and model are required.",
+      "receiptRequired": "Receipt number is required.",
+      "receivedDateRequired": "Received date is required.",
+      "deliveredDateRequired": "Actual delivered date is required before closing.",
+      "ticketLocked": "Completed tickets are view-only.",
+      "partRequestTicketRequired": "Select a ticket before requesting parts.",
+      "partRequired": "Select a part.",
+      "requestedByRequired": "Requested by is required.",
+      "technicianRequired": "Technician is required for the request.",
+      "partQuantityRequired": "Quantity must be 1 or more.",
+      "externalItemRequired": "External item name is required.",
+      "externalReceiptRequired": "Receipt number is required for external parts.",
+      "externalCostRequired": "External cost must be greater than 0.",
+      "attachmentTooLarge": "\"{name}\" exceeds 5 MB.",
+      "attachmentDeleteFailed": "Failed to remove attachment.",
       "locationRequired": "Select a location before saving.",
-      "saved": "Ticket saved."
+      "saved": "Ticket saved.",
+      "updated": "Ticket updated.",
+      "partRequestSaved": "Part request submitted."
+    },
+    "attachments": {
+      "deleteTitle": "Delete attachment?",
+      "deleteDescription": "Remove \"{name}\" from this ticket?",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel"
     }
   },
   "reports": {
@@ -256,11 +731,19 @@
       "title": "General Settings"
     },
     "fields": {
-      "taxRate": "Tax Rate",
+      "taxRate": "VAT Rate",
+      "defaultMargin": "Default Margin (%)",
+      "salesDiscounts": "Sales discounts",
+      "businessName": "Business Name",
+      "supplierTin": "Supplier TIN",
+      "vatRegistrationDate": "VAT Registration Date",
+      "vatRegistrationNo": "VAT Registration No.",
       "location": "Default Location"
     },
     "options": {
-      "selectLocation": "Select location"
+      "selectLocation": "Select location",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
     },
     "actions": {
       "save": "Save"
@@ -271,5 +754,10 @@
   },
   "lang": {
     "label": "Language"
+  },
+  "permissions": {
+    "noAccess": "You do not have access to view this section.",
+    "readOnly": "You have read-only access.",
+    "restricted": "Restricted"
   }
 }

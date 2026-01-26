@@ -4,17 +4,23 @@ import type {
   Category,
   Customer,
   CustomerDevice,
+  CostSheetEntry,
   Inventory,
+  InventoryBatch,
+  InventoryMovement,
   Item,
   ItemAttachment,
   Location,
   MaintenanceTicket,
+  MaintenanceAttachment,
   PartRequest,
   PartUsage,
   Payment,
   Sale,
+  SaleAttachment,
   SaleItem,
-  Setting
+  Setting,
+  Unit
 } from '~/types/database'
 
 export class OmegaDatabase extends Dexie {
@@ -22,13 +28,19 @@ export class OmegaDatabase extends Dexie {
   categories!: Table<Category, 'category_id'>
   locations!: Table<Location, 'location_id'>
   inventory!: Table<Inventory, 'inventory_id'>
+  inventoryBatches!: Table<InventoryBatch, 'batch_id'>
+  inventoryMovements!: Table<InventoryMovement, 'movement_id'>
+  units!: Table<Unit, 'unit_id'>
   attachments!: Table<ItemAttachment, 'attachment_id'>
+  costSheets!: Table<CostSheetEntry, 'cost_sheet_id'>
   customers!: Table<Customer, 'customer_id'>
   customerDevices!: Table<CustomerDevice, 'device_id'>
   sales!: Table<Sale, 'sale_id'>
   saleItems!: Table<SaleItem, 'sale_item_id'>
   payments!: Table<Payment, 'payment_id'>
+  saleAttachments!: Table<SaleAttachment, 'attachment_id'>
   maintenanceTickets!: Table<MaintenanceTicket, 'ticket_id'>
+  maintenanceAttachments!: Table<MaintenanceAttachment, 'attachment_id'>
   partRequests!: Table<PartRequest, 'request_id'>
   partUsage!: Table<PartUsage, 'usage_id'>
   settings!: Table<Setting, 'setting_id'>
@@ -56,6 +68,51 @@ export class OmegaDatabase extends Dexie {
     this.version(2).stores({
       ...baseSchema,
       attachments: 'attachment_id, item_id, created_at'
+    })
+    this.version(3).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]'
+    })
+    this.version(4).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]',
+      units: 'unit_id, name'
+    })
+    this.version(5).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]',
+      units: 'unit_id, name',
+      costSheets: 'cost_sheet_id, item_name, model, unit'
+    })
+    this.version(6).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]',
+      inventoryMovements: 'movement_id, item_id, location_id, movement_type, created_at, [item_id+location_id]',
+      units: 'unit_id, name',
+      costSheets: 'cost_sheet_id, item_name, model, unit'
+    })
+    this.version(7).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]',
+      inventoryMovements: 'movement_id, item_id, location_id, movement_type, created_at, [item_id+location_id]',
+      units: 'unit_id, name',
+      costSheets: 'cost_sheet_id, item_name, model, unit',
+      saleAttachments: 'attachment_id, sale_id, created_at'
+    })
+    this.version(8).stores({
+      ...baseSchema,
+      attachments: 'attachment_id, item_id, created_at',
+      inventoryBatches: 'batch_id, item_id, location_id, received_at, [item_id+location_id]',
+      inventoryMovements: 'movement_id, item_id, location_id, movement_type, created_at, [item_id+location_id]',
+      units: 'unit_id, name',
+      costSheets: 'cost_sheet_id, item_name, model, unit',
+      saleAttachments: 'attachment_id, sale_id, created_at',
+      maintenanceAttachments: 'attachment_id, ticket_id, created_at'
     })
   }
 }

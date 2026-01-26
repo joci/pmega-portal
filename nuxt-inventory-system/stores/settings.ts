@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
+import { $fetch } from 'ofetch'
 import { ref } from 'vue'
 import { useDatabase } from '~/composables/useDatabase'
-import { createId } from '~/utils/id'
 import type { Setting } from '~/types/database'
-
-const nowIso = () => new Date().toISOString()
 
 const defaultSettings: Setting[] = [
   {
@@ -41,6 +39,48 @@ const defaultSettings: Setting[] = [
     setting_value: '0.15',
     setting_type: 'NUMBER',
     description: 'Default tax rate (15%)'
+  },
+  {
+    setting_id: 'setting-app-003',
+    setting_key: 'business_name',
+    setting_value: 'Omega Electronics PLC',
+    setting_type: 'STRING',
+    description: 'Registered business name'
+  },
+  {
+    setting_id: 'setting-app-004',
+    setting_key: 'supplier_tin',
+    setting_value: '',
+    setting_type: 'STRING',
+    description: 'Supplier TIN number'
+  },
+  {
+    setting_id: 'setting-app-005',
+    setting_key: 'vat_registration_date',
+    setting_value: '',
+    setting_type: 'DATE',
+    description: 'VAT registration date'
+  },
+  {
+    setting_id: 'setting-app-006',
+    setting_key: 'vat_registration_no',
+    setting_value: '010901',
+    setting_type: 'STRING',
+    description: 'Supplier VAT registration number'
+  },
+  {
+    setting_id: 'setting-pricing-001',
+    setting_key: 'default_margin_percent',
+    setting_value: '40',
+    setting_type: 'NUMBER',
+    description: 'Default margin percentage for pricing'
+  },
+  {
+    setting_id: 'setting-sales-001',
+    setting_key: 'sales_discounts_enabled',
+    setting_value: 'false',
+    setting_type: 'BOOLEAN',
+    description: 'Enable discounts on sales'
   }
 ]
 
@@ -67,6 +107,19 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const loadAll = async () => {
     const db = getDb()
+    try {
+      const payload = await $fetch<{ settings: Setting[] }>('/api/settings')
+      settings.value = payload.settings
+      isLoaded.value = true
+      await db.transaction('rw', db.settings, async () => {
+        await db.settings.clear()
+        await db.settings.bulkAdd(payload.settings)
+      })
+      return
+    } catch (error) {
+      console.warn('Failed to load settings from server, falling back to cache.', error)
+    }
+
     await seedDefaults()
     settings.value = await db.settings.toArray()
     isLoaded.value = true
@@ -74,30 +127,20 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const upsertSetting = async (payload: Omit<Setting, 'setting_id'> & { setting_id?: string }) => {
     const db = getDb()
-    const existing = await db.settings.where('setting_key').equals(payload.setting_key).first()
+    const setting = await $fetch<Setting>('/api/settings', {
+      method: 'PUT',
+      body: payload
+    })
 
-    if (existing) {
-      const updated: Setting = {
-        ...existing,
-        ...payload,
-        updated_at: nowIso()
-      }
-      await db.settings.put(updated)
+    const exists = settings.value.find((entry) => entry.setting_id === setting.setting_id)
+    if (exists) {
       settings.value = settings.value.map((entry) =>
-        entry.setting_id === updated.setting_id ? updated : entry
+        entry.setting_id === setting.setting_id ? setting : entry
       )
-      return
+    } else {
+      settings.value = [setting, ...settings.value]
     }
-
-    const created: Setting = {
-      ...payload,
-      setting_id: payload.setting_id ?? createId(),
-      created_at: nowIso(),
-      updated_at: nowIso(),
-      sync_status: 'SYNCED'
-    }
-    await db.settings.add(created)
-    settings.value = [created, ...settings.value]
+    await db.settings.put(setting)
   }
 
   const getSetting = (key: string) => {

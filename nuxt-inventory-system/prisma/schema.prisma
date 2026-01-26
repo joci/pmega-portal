@@ -1,0 +1,667 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  CONFLICT
+}
+
+enum CategoryType {
+  PRODUCT
+  SPARE_PART
+  BOTH
+}
+
+enum ItemType {
+  PRODUCT
+  SPARE_PART
+}
+
+enum LocationType {
+  STORE
+  WORKSHOP
+  WAREHOUSE
+}
+
+enum StockLocation {
+  STORE
+  WORKSHOP
+  BOTH
+}
+
+enum InventoryMovementType {
+  RECEIPT
+  TRANSFER_IN
+  TRANSFER_OUT
+  SALE
+  ADJUSTMENT
+}
+
+enum PricingMode {
+  MANUAL
+  MARGIN_PERCENT
+  PRICE_LIST
+  COST_SHEET
+}
+
+enum SaleType {
+  RETAIL
+  MAINTENANCE
+  INTERNAL
+}
+
+enum SaleStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  VOID
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum LineType {
+  PRODUCT
+  SPARE_PART
+  LABOR
+  FEE
+  ADJUSTMENT
+}
+
+enum TicketStatus {
+  PENDING
+  DIAGNOSIS
+  WAITING_PARTS
+  IN_PROGRESS
+  TESTING
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WarrantyStatus {
+  IN_WARRANTY
+  OUT_OF_WARRANTY
+  EXTENDED
+}
+
+enum PartSource {
+  STORE_INVENTORY
+  EXTERNAL_SUPPLIER
+  CUSTOMER_PROVIDED
+}
+
+enum PartRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
+}
+
+enum SettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  DATE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  CREDIT
+  MOBILE
+  CHECK
+}
+
+enum PaymentType {
+  PAYMENT
+  REFUND
+  ADJUSTMENT
+}
+
+enum PaymentState {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CustomerType {
+  RETAIL
+  MAINTENANCE
+  BOTH
+}
+
+enum MaintenancePaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  INVOICED
+}
+
+model Category {
+  category_id   String       @id
+  name          String
+  description   String?      @db.Text
+  category_type CategoryType
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  sync_status   SyncStatus   @default(SYNCED)
+
+  items Item[]
+
+  @@map("categories")
+}
+
+model Location {
+  location_id   String       @id
+  name          String
+  location_type LocationType
+  sub_city      String?
+  house_no      String?
+  city          String?
+  country       String?
+  po_box        String?
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  sync_status   SyncStatus   @default(SYNCED)
+
+  items          Item[]
+  inventory      Inventory[]
+  batches        InventoryBatch[]
+  movements      InventoryMovement[]
+  sales          Sale[]
+  tickets        MaintenanceTicket[]
+  part_requests  PartRequest[]
+  part_usage     PartUsage[]
+
+  @@map("locations")
+}
+
+model Unit {
+  unit_id     String     @id
+  name        String
+  description String?    @db.Text
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  sync_status SyncStatus @default(SYNCED)
+
+  @@map("units")
+}
+
+model CostSheetEntry {
+  cost_sheet_id String     @id
+  item_name     String
+  model         String?
+  unit          String?
+  quantity      Float
+  unit_cost     Decimal    @db.Decimal(12, 2)
+  total_with_vat Decimal   @db.Decimal(12, 2)
+  vat_rate      Float
+  entry_date    DateTime   @default(now())
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  sync_status   SyncStatus @default(SYNCED)
+
+  item Item? @relation("CostSheetItem")
+
+  @@index([item_name])
+  @@map("cost_sheet_entries")
+}
+
+model Item {
+  item_id            String        @id
+  name               String
+  model              String?
+  serial_number      String?
+  description        String?       @db.Text
+  price              Decimal      @db.Decimal(12, 2)
+  cost               Decimal      @db.Decimal(12, 2)
+  category_id        String?
+  location_id        String?
+  item_type          ItemType
+  is_for_maintenance Boolean
+  min_stock_level    Int
+  reorder_quantity   Int
+  stock_location     StockLocation
+  sku                String?       @unique
+  vendor_sku         String?
+  barcode            String?
+  weight             Float?
+  dimensions         String?
+  manufacturer       String?
+  warranty_period    Int?
+  unit               String?
+  pricing_mode       PricingMode   @default(MANUAL)
+  margin_percent     Float?
+  price_override_reason String?    @db.Text
+  price_updated_at   DateTime?
+  cost_sheet_quantity Float?
+  cost_sheet_unit_cost Decimal?    @db.Decimal(12, 2)
+  cost_sheet_total_with_vat Decimal? @db.Decimal(12, 2)
+  cost_sheet_vat_rate Float?
+  cost_sheet_entry_id String?       @unique
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+  sync_status        SyncStatus    @default(SYNCED)
+
+  category       Category?       @relation(fields: [category_id], references: [category_id])
+  location       Location?       @relation(fields: [location_id], references: [location_id])
+  cost_sheet_entry CostSheetEntry? @relation("CostSheetItem", fields: [cost_sheet_entry_id], references: [cost_sheet_id])
+  inventory      Inventory[]
+  batches        InventoryBatch[]
+  movements      InventoryMovement[]
+  attachments    ItemAttachment[]
+  sale_items     SaleItem[]
+  customer_items CustomerDevice[] @relation("CustomerDeviceCatalogItem")
+  part_requests  PartRequest[]
+  part_usage     PartUsage[]
+
+  @@index([category_id])
+  @@index([location_id])
+  @@map("items")
+}
+
+model Inventory {
+  inventory_id     String     @id
+  item_id          String
+  location_id      String
+  quantity         Float
+  reserved_quantity Float     @default(0)
+  batch_number     String?
+  expiry_date      DateTime?
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+  sync_status      SyncStatus @default(SYNCED)
+
+  item     Item     @relation(fields: [item_id], references: [item_id])
+  location Location @relation(fields: [location_id], references: [location_id])
+
+  @@unique([item_id, location_id])
+  @@index([location_id])
+  @@map("inventory")
+}
+
+model InventoryBatch {
+  batch_id           String     @id
+  item_id            String
+  location_id        String
+  received_at        DateTime
+  quantity_received  Float
+  quantity_remaining Float
+  unit_cost          Decimal     @db.Decimal(12, 2)
+  reference          String?
+  created_at         DateTime   @default(now())
+  updated_at         DateTime   @updatedAt
+  sync_status        SyncStatus @default(SYNCED)
+
+  item     Item     @relation(fields: [item_id], references: [item_id])
+  location Location @relation(fields: [location_id], references: [location_id])
+
+  @@index([item_id, location_id])
+  @@map("inventory_batches")
+}
+
+model InventoryMovement {
+  movement_id   String                @id
+  item_id       String
+  location_id   String
+  quantity      Float
+  movement_type InventoryMovementType
+  reference_id  String?
+  unit_cost     Decimal?              @db.Decimal(12, 2)
+  unit_price    Decimal?              @db.Decimal(12, 2)
+  notes         String?               @db.Text
+  employee_name String?
+  attachment_data_url String?         @db.Text
+  attachment_file_name String?
+  attachment_file_type String?
+  attachment_file_size Int?
+  created_at    DateTime              @default(now())
+  sync_status   SyncStatus            @default(SYNCED)
+
+  item     Item     @relation(fields: [item_id], references: [item_id])
+  location Location @relation(fields: [location_id], references: [location_id])
+
+  @@index([item_id, location_id])
+  @@map("inventory_movements")
+}
+
+model ItemAttachment {
+  attachment_id String     @id
+  item_id       String
+  file_name     String
+  file_type     String
+  file_size     Int
+  data_url      String     @db.Text
+  sort_order    Int?
+  created_at    DateTime   @default(now())
+  sync_status   SyncStatus @default(SYNCED)
+
+  item Item @relation(fields: [item_id], references: [item_id])
+
+  @@index([item_id])
+  @@map("attachments")
+}
+
+model Customer {
+  customer_id   String       @id
+  name          String
+  name_amharic  String?
+  email         String?
+  phone         String?
+  tin           String?
+  vat_registration_no String?
+  address_id    String?
+  customer_type CustomerType?
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  sync_status   SyncStatus   @default(SYNCED)
+
+  devices CustomerDevice[]
+  sales   Sale[]
+  tickets MaintenanceTicket[]
+
+  @@map("customers")
+}
+
+model CustomerDevice {
+  device_id       String     @id
+  customer_id     String
+  catalog_item_id String?
+  item_name       String?
+  brand           String?
+  model           String?
+  serial_number   String?
+  purchase_date   DateTime?
+  warranty_expiry DateTime?
+  notes           String?    @db.Text
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  sync_status     SyncStatus @default(SYNCED)
+
+  customer     Customer          @relation(fields: [customer_id], references: [customer_id])
+  catalog_item Item?             @relation("CustomerDeviceCatalogItem", fields: [catalog_item_id], references: [item_id])
+  tickets      MaintenanceTicket[]
+  part_requests PartRequest[]
+
+  @@index([customer_id])
+  @@index([catalog_item_id])
+  @@map("customer_devices")
+}
+
+model Sale {
+  sale_id                      String        @id
+  sale_number                  String?
+  receipt_number               String?
+  sale_date                    DateTime      @default(now())
+  sale_type                    SaleType
+  status                       SaleStatus
+  payment_status               PaymentStatus
+  payment_method               PaymentMethod?
+  customer_id                  String?
+  customer_name                String?
+  customer_phone               String?
+  customer_tin                 String?
+  customer_vat_registration_no String?
+  maintenance_ticket_id        String?
+  supplier_name                String?
+  supplier_tin                 String?
+  vat_registration_date        DateTime?
+  supplier_vat_registration_no String?
+  supplier_address_sub_city    String?
+  supplier_address_house_no    String?
+  supplier_address_city        String?
+  supplier_address_country     String?
+  supplier_address_po_box      String?
+  subtotal_amount              Decimal      @db.Decimal(12, 2)
+  discount_amount              Decimal      @db.Decimal(12, 2)
+  tax_amount                   Decimal      @db.Decimal(12, 2)
+  total_amount                 Decimal      @db.Decimal(12, 2)
+  is_repair_service            Boolean?
+  repair_service_id            String?
+  performed_by                 String?
+  shipping_address_id          String?
+  notes                        String?       @db.Text
+  location_id                  String
+  created_at                   DateTime      @default(now())
+  updated_at                   DateTime      @updatedAt
+  sync_status                  SyncStatus    @default(SYNCED)
+
+  customer           Customer?         @relation(fields: [customer_id], references: [customer_id])
+  location           Location          @relation(fields: [location_id], references: [location_id])
+  maintenance_ticket MaintenanceTicket? @relation(fields: [maintenance_ticket_id], references: [ticket_id])
+  items              SaleItem[]
+  payments           Payment[]
+  attachments        SaleAttachment[]
+
+  @@index([sale_date])
+  @@index([location_id])
+  @@map("sales")
+}
+
+model SaleAttachment {
+  attachment_id String     @id
+  sale_id       String
+  file_name     String
+  file_type     String
+  file_size     Int
+  data_url      String     @db.Text
+  created_at    DateTime   @default(now())
+  sync_status   SyncStatus @default(SYNCED)
+
+  sale Sale @relation(fields: [sale_id], references: [sale_id])
+
+  @@index([sale_id])
+  @@map("sale_attachments")
+}
+
+model SaleItem {
+  sale_item_id     String     @id
+  sale_id          String
+  item_id          String?
+  description      String?    @db.Text
+  line_type        LineType
+  quantity         Float
+  unit_price       Decimal     @db.Decimal(12, 2)
+  discount_amount  Decimal     @db.Decimal(12, 2)
+  tax_amount       Decimal     @db.Decimal(12, 2)
+  line_total       Decimal     @db.Decimal(12, 2)
+  affects_inventory Boolean
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+  sync_status      SyncStatus @default(SYNCED)
+
+  sale       Sale       @relation(fields: [sale_id], references: [sale_id])
+  item       Item?      @relation(fields: [item_id], references: [item_id])
+  part_usage PartUsage[]
+
+  @@index([sale_id])
+  @@index([item_id])
+  @@map("sale_items")
+}
+
+model Payment {
+  payment_id            String       @id
+  sale_id               String
+  payment_date          DateTime     @default(now())
+  amount                Decimal     @db.Decimal(12, 2)
+  payment_method        PaymentMethod
+  payment_type          PaymentType
+  status                PaymentState
+  transaction_reference String?
+  notes                 String?      @db.Text
+  created_at            DateTime     @default(now())
+  updated_at            DateTime     @updatedAt
+  created_by            String?
+  sync_status           SyncStatus   @default(SYNCED)
+
+  sale Sale @relation(fields: [sale_id], references: [sale_id])
+
+  @@index([sale_id])
+  @@map("payments")
+}
+
+model MaintenanceTicket {
+  ticket_id            String                   @id
+  ticket_number        String?
+  receipt_number       String?
+  receipt_attachment  String?                  @db.Text
+  customer_id          String
+  customer_device_id   String
+  technician_id        String?
+  status               TicketStatus
+  problem_description  String                   @db.Text
+  diagnosis            String?                  @db.Text
+  estimated_cost       Decimal?    @db.Decimal(12, 2)
+  estimated_completion DateTime?
+  repair_cost          Decimal?    @db.Decimal(12, 2)
+  labor_cost           Decimal?    @db.Decimal(12, 2)
+  labor_hours          Float?
+  total_cost           Decimal?    @db.Decimal(12, 2)
+  payment_status       MaintenancePaymentStatus?
+  priority             TicketPriority
+  warranty_status      WarrantyStatus
+  received_at          DateTime                 @default(now())
+  target_delivery_at   DateTime?
+  created_at           DateTime                 @default(now())
+  updated_at           DateTime                 @updatedAt
+  completed_at         DateTime?
+  delivered_at         DateTime?
+  created_by           String?
+  updated_by           String?
+  sync_status          SyncStatus               @default(SYNCED)
+  location_id          String
+
+  customer        Customer       @relation(fields: [customer_id], references: [customer_id])
+  customer_device CustomerDevice @relation(fields: [customer_device_id], references: [device_id])
+  location        Location       @relation(fields: [location_id], references: [location_id])
+  part_requests   PartRequest[]
+  part_usage      PartUsage[]
+  sales           Sale[]
+  attachments     MaintenanceAttachment[]
+
+  @@index([customer_id])
+  @@index([customer_device_id])
+  @@index([location_id])
+  @@map("maintenance_tickets")
+}
+
+model MaintenanceAttachment {
+  attachment_id String     @id
+  ticket_id     String
+  file_name     String
+  file_type     String
+  file_size     Int
+  data_url      String     @db.Text
+  created_at    DateTime   @default(now())
+  sync_status   SyncStatus @default(SYNCED)
+
+  ticket MaintenanceTicket @relation(fields: [ticket_id], references: [ticket_id])
+
+  @@index([ticket_id])
+  @@map("maintenance_attachments")
+}
+
+model PartRequest {
+  request_id        String            @id
+  ticket_id         String
+  customer_device_id String
+  part_id           String?
+  external_item_name String?
+  external_model     String?
+  external_cost      Decimal?         @db.Decimal(12, 2)
+  external_receipt_number String?
+  external_receipt_data_url String?    @db.Text
+  external_receipt_file_name String?
+  external_receipt_file_type String?
+  external_receipt_file_size Int?
+  quantity_requested Float
+  requested_by      String
+  technician_id     String?
+  requested_at      DateTime          @default(now())
+  approved_by       String?
+  approved_at       DateTime?
+  status            PartRequestStatus
+  source_preference PartSource
+  notes             String?           @db.Text
+  location_id       String
+  sync_status       SyncStatus        @default(SYNCED)
+
+  ticket    MaintenanceTicket @relation(fields: [ticket_id], references: [ticket_id])
+  customer_device CustomerDevice @relation(fields: [customer_device_id], references: [device_id])
+  part      Item?             @relation(fields: [part_id], references: [item_id])
+  location  Location          @relation(fields: [location_id], references: [location_id])
+  part_usage PartUsage[]
+
+  @@index([ticket_id])
+  @@index([customer_device_id])
+  @@index([part_id])
+  @@map("part_requests")
+}
+
+model PartUsage {
+  usage_id              String     @id
+  ticket_id             String
+  request_id            String?
+  sale_item_id          String?
+  part_id               String
+  quantity_used         Float
+  unit_cost             Decimal    @db.Decimal(12, 2)
+  total_cost            Decimal?   @db.Decimal(12, 2)
+  source                PartSource
+  external_supplier_id  String?
+  external_reference    String?
+  used_by               String?
+  used_at               DateTime?
+  notes                 String?    @db.Text
+  sync_status           SyncStatus @default(SYNCED)
+  location_id           String
+
+  ticket     MaintenanceTicket @relation(fields: [ticket_id], references: [ticket_id])
+  request    PartRequest?      @relation(fields: [request_id], references: [request_id])
+  sale_item  SaleItem?         @relation(fields: [sale_item_id], references: [sale_item_id])
+  part       Item              @relation(fields: [part_id], references: [item_id])
+  location   Location          @relation(fields: [location_id], references: [location_id])
+
+  @@index([ticket_id])
+  @@index([part_id])
+  @@map("part_usage")
+}
+
+model Setting {
+  setting_id    String      @id
+  setting_key   String      @unique
+  setting_value String?
+  setting_type  SettingType
+  category      String?
+  description   String?     @db.Text
+  is_editable   Boolean?
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+  sync_status   SyncStatus  @default(SYNCED)
+
+  @@map("settings")
+}

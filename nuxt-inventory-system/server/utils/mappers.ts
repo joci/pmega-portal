@@ -1,0 +1,383 @@
+import type {
+  Category,
+  CostSheetEntry,
+  Customer,
+  CustomerDevice,
+  Inventory,
+  InventoryBatch,
+  InventoryMovement,
+  Item,
+  ItemAttachment,
+  Location,
+  MaintenanceAttachment,
+  MaintenanceTicket,
+  PartRequest,
+  PartUsage,
+  Payment,
+  Sale,
+  SaleAttachment,
+  SaleItem,
+  Setting,
+  Unit
+} from '@prisma/client'
+import { toIso, toNumber } from './serialize'
+
+export const mapCategory = (category: Category) => ({
+  category_id: category.category_id,
+  name: category.name,
+  description: category.description ?? null,
+  category_type: category.category_type,
+  created_at: toIso(category.created_at),
+  updated_at: toIso(category.updated_at),
+  sync_status: category.sync_status
+})
+
+export const mapLocation = (location: Location) => ({
+  location_id: location.location_id,
+  name: location.name,
+  location_type: location.location_type,
+  sub_city: location.sub_city ?? null,
+  house_no: location.house_no ?? null,
+  city: location.city ?? null,
+  country: location.country ?? null,
+  po_box: location.po_box ?? null,
+  created_at: toIso(location.created_at),
+  updated_at: toIso(location.updated_at),
+  sync_status: location.sync_status
+})
+
+export const mapUnit = (unit: Unit) => ({
+  unit_id: unit.unit_id,
+  name: unit.name,
+  description: unit.description ?? null,
+  created_at: toIso(unit.created_at),
+  updated_at: toIso(unit.updated_at),
+  sync_status: unit.sync_status
+})
+
+export const mapItem = (item: Item) => ({
+  item_id: item.item_id,
+  name: item.name,
+  model: item.model ?? null,
+  serial_number: item.serial_number ?? null,
+  description: item.description ?? null,
+  price: toNumber(item.price) ?? 0,
+  cost: toNumber(item.cost) ?? 0,
+  category_id: item.category_id ?? null,
+  location_id: item.location_id ?? null,
+  item_type: item.item_type,
+  is_for_maintenance: item.is_for_maintenance,
+  min_stock_level: item.min_stock_level,
+  reorder_quantity: item.reorder_quantity,
+  stock_location: item.stock_location,
+  sku: item.sku ?? null,
+  vendor_sku: item.vendor_sku ?? null,
+  barcode: item.barcode ?? null,
+  weight: item.weight ?? null,
+  dimensions: item.dimensions ?? null,
+  manufacturer: item.manufacturer ?? null,
+  warranty_period: item.warranty_period ?? null,
+  unit: item.unit ?? null,
+  pricing_mode: item.pricing_mode,
+  margin_percent: item.margin_percent ?? null,
+  price_override_reason: item.price_override_reason ?? null,
+  price_updated_at: toIso(item.price_updated_at),
+  cost_sheet_quantity: item.cost_sheet_quantity ?? null,
+  cost_sheet_unit_cost: toNumber(item.cost_sheet_unit_cost) ?? null,
+  cost_sheet_total_with_vat: toNumber(item.cost_sheet_total_with_vat) ?? null,
+  cost_sheet_vat_rate: item.cost_sheet_vat_rate ?? null,
+  cost_sheet_entry_id: item.cost_sheet_entry_id ?? null,
+  created_at: toIso(item.created_at),
+  updated_at: toIso(item.updated_at),
+  sync_status: item.sync_status
+})
+
+export const mapCostSheetEntry = (entry: CostSheetEntry & { item?: Item | null }) => ({
+  cost_sheet_id: entry.cost_sheet_id,
+  item_name: entry.item_name,
+  model: entry.model ?? null,
+  unit: entry.unit ?? null,
+  quantity: entry.quantity,
+  unit_cost: toNumber(entry.unit_cost) ?? 0,
+  total_with_vat: toNumber(entry.total_with_vat) ?? 0,
+  vat_rate: entry.vat_rate,
+  entry_date: toIso(entry.entry_date),
+  item_id: entry.item?.item_id ?? null,
+  added_to_inventory: Boolean(entry.item),
+  created_at: toIso(entry.created_at),
+  updated_at: toIso(entry.updated_at),
+  sync_status: entry.sync_status
+})
+
+export const mapInventory = (row: Inventory) => ({
+  inventory_id: row.inventory_id,
+  item_id: row.item_id,
+  location_id: row.location_id,
+  quantity: row.quantity,
+  reserved_quantity: row.reserved_quantity,
+  batch_number: row.batch_number ?? null,
+  expiry_date: toIso(row.expiry_date),
+  created_at: toIso(row.created_at),
+  updated_at: toIso(row.updated_at),
+  sync_status: row.sync_status
+})
+
+export const mapInventoryBatch = (batch: InventoryBatch) => ({
+  batch_id: batch.batch_id,
+  item_id: batch.item_id,
+  location_id: batch.location_id,
+  received_at: toIso(batch.received_at),
+  quantity_received: batch.quantity_received,
+  quantity_remaining: batch.quantity_remaining,
+  unit_cost: toNumber(batch.unit_cost) ?? 0,
+  reference: batch.reference ?? null,
+  created_at: toIso(batch.created_at),
+  updated_at: toIso(batch.updated_at),
+  sync_status: batch.sync_status
+})
+
+export const mapInventoryMovement = (movement: InventoryMovement) => ({
+  movement_id: movement.movement_id,
+  item_id: movement.item_id,
+  location_id: movement.location_id,
+  quantity: movement.quantity,
+  movement_type: movement.movement_type,
+  reference_id: movement.reference_id ?? null,
+  unit_cost: toNumber(movement.unit_cost) ?? null,
+  unit_price: toNumber(movement.unit_price) ?? null,
+  notes: movement.notes ?? null,
+  employee_name: movement.employee_name ?? null,
+  attachment_data_url: movement.attachment_data_url ?? null,
+  attachment_file_name: movement.attachment_file_name ?? null,
+  attachment_file_type: movement.attachment_file_type ?? null,
+  attachment_file_size: movement.attachment_file_size ?? null,
+  created_at: toIso(movement.created_at),
+  sync_status: movement.sync_status
+})
+
+export const mapAttachment = (attachment: ItemAttachment) => ({
+  attachment_id: attachment.attachment_id,
+  item_id: attachment.item_id,
+  file_name: attachment.file_name,
+  file_type: attachment.file_type,
+  file_size: attachment.file_size,
+  data_url: attachment.data_url,
+  sort_order: attachment.sort_order ?? null,
+  created_at: toIso(attachment.created_at),
+  sync_status: attachment.sync_status
+})
+
+export const mapSetting = (setting: Setting) => ({
+  setting_id: setting.setting_id,
+  setting_key: setting.setting_key,
+  setting_value: setting.setting_value ?? null,
+  setting_type: setting.setting_type,
+  category: setting.category ?? null,
+  description: setting.description ?? null,
+  is_editable: setting.is_editable ?? null,
+  created_at: toIso(setting.created_at),
+  updated_at: toIso(setting.updated_at),
+  sync_status: setting.sync_status
+})
+
+export const mapSale = (sale: Sale) => ({
+  sale_id: sale.sale_id,
+  sale_number: sale.sale_number ?? null,
+  receipt_number: sale.receipt_number ?? null,
+  sale_date: toIso(sale.sale_date),
+  sale_type: sale.sale_type,
+  status: sale.status,
+  payment_status: sale.payment_status,
+  payment_method: sale.payment_method ?? null,
+  customer_id: sale.customer_id ?? null,
+  customer_name: sale.customer_name ?? null,
+  customer_phone: sale.customer_phone ?? null,
+  customer_tin: sale.customer_tin ?? null,
+  customer_vat_registration_no: sale.customer_vat_registration_no ?? null,
+  maintenance_ticket_id: sale.maintenance_ticket_id ?? null,
+  supplier_name: sale.supplier_name ?? null,
+  supplier_tin: sale.supplier_tin ?? null,
+  vat_registration_date: toIso(sale.vat_registration_date),
+  supplier_vat_registration_no: sale.supplier_vat_registration_no ?? null,
+  supplier_address_sub_city: sale.supplier_address_sub_city ?? null,
+  supplier_address_house_no: sale.supplier_address_house_no ?? null,
+  supplier_address_city: sale.supplier_address_city ?? null,
+  supplier_address_country: sale.supplier_address_country ?? null,
+  supplier_address_po_box: sale.supplier_address_po_box ?? null,
+  subtotal_amount: toNumber(sale.subtotal_amount) ?? 0,
+  discount_amount: toNumber(sale.discount_amount) ?? 0,
+  tax_amount: toNumber(sale.tax_amount) ?? 0,
+  total_amount: toNumber(sale.total_amount) ?? 0,
+  is_repair_service: sale.is_repair_service ?? null,
+  repair_service_id: sale.repair_service_id ?? null,
+  performed_by: sale.performed_by ?? null,
+  shipping_address_id: sale.shipping_address_id ?? null,
+  notes: sale.notes ?? null,
+  location_id: sale.location_id,
+  created_at: toIso(sale.created_at),
+  updated_at: toIso(sale.updated_at),
+  sync_status: sale.sync_status
+})
+
+export const mapSaleItem = (item: SaleItem) => ({
+  sale_item_id: item.sale_item_id,
+  sale_id: item.sale_id,
+  item_id: item.item_id ?? null,
+  description: item.description ?? null,
+  line_type: item.line_type,
+  quantity: item.quantity,
+  unit_price: toNumber(item.unit_price) ?? 0,
+  discount_amount: toNumber(item.discount_amount) ?? 0,
+  tax_amount: toNumber(item.tax_amount) ?? 0,
+  line_total: toNumber(item.line_total) ?? 0,
+  affects_inventory: item.affects_inventory,
+  created_at: toIso(item.created_at),
+  updated_at: toIso(item.updated_at),
+  sync_status: item.sync_status
+})
+
+export const mapPayment = (payment: Payment) => ({
+  payment_id: payment.payment_id,
+  sale_id: payment.sale_id,
+  payment_date: toIso(payment.payment_date),
+  amount: toNumber(payment.amount) ?? 0,
+  payment_method: payment.payment_method,
+  payment_type: payment.payment_type,
+  status: payment.status,
+  transaction_reference: payment.transaction_reference ?? null,
+  notes: payment.notes ?? null,
+  created_at: toIso(payment.created_at),
+  updated_at: toIso(payment.updated_at),
+  created_by: payment.created_by ?? null,
+  sync_status: payment.sync_status
+})
+
+export const mapSaleAttachment = (attachment: SaleAttachment) => ({
+  attachment_id: attachment.attachment_id,
+  sale_id: attachment.sale_id,
+  file_name: attachment.file_name,
+  file_type: attachment.file_type,
+  file_size: attachment.file_size,
+  data_url: attachment.data_url,
+  created_at: toIso(attachment.created_at),
+  sync_status: attachment.sync_status
+})
+
+export const mapMaintenanceAttachment = (attachment: MaintenanceAttachment) => ({
+  attachment_id: attachment.attachment_id,
+  ticket_id: attachment.ticket_id,
+  file_name: attachment.file_name,
+  file_type: attachment.file_type,
+  file_size: attachment.file_size,
+  data_url: attachment.data_url,
+  created_at: toIso(attachment.created_at),
+  sync_status: attachment.sync_status
+})
+
+export const mapCustomer = (customer: Customer) => ({
+  customer_id: customer.customer_id,
+  name: customer.name,
+  name_amharic: customer.name_amharic ?? null,
+  email: customer.email ?? null,
+  phone: customer.phone ?? null,
+  tin: customer.tin ?? null,
+  vat_registration_no: customer.vat_registration_no ?? null,
+  address_id: customer.address_id ?? null,
+  customer_type: customer.customer_type ?? null,
+  created_at: toIso(customer.created_at),
+  updated_at: toIso(customer.updated_at),
+  sync_status: customer.sync_status
+})
+
+export const mapCustomerDevice = (device: CustomerDevice) => ({
+  device_id: device.device_id,
+  customer_id: device.customer_id,
+  catalog_item_id: device.catalog_item_id ?? null,
+  item_name: device.item_name ?? null,
+  brand: device.brand ?? null,
+  model: device.model ?? null,
+  serial_number: device.serial_number ?? null,
+  purchase_date: toIso(device.purchase_date),
+  warranty_expiry: toIso(device.warranty_expiry),
+  notes: device.notes ?? null,
+  created_at: toIso(device.created_at),
+  updated_at: toIso(device.updated_at),
+  sync_status: device.sync_status
+})
+
+export const mapMaintenanceTicket = (ticket: MaintenanceTicket) => ({
+  ticket_id: ticket.ticket_id,
+  ticket_number: ticket.ticket_number ?? null,
+  receipt_number: ticket.receipt_number ?? null,
+  receipt_attachment: ticket.receipt_attachment ?? null,
+  customer_id: ticket.customer_id,
+  customer_device_id: ticket.customer_device_id,
+  technician_id: ticket.technician_id ?? null,
+  status: ticket.status,
+  problem_description: ticket.problem_description,
+  diagnosis: ticket.diagnosis ?? null,
+  estimated_cost: toNumber(ticket.estimated_cost) ?? null,
+  estimated_completion: toIso(ticket.estimated_completion),
+  repair_cost: toNumber(ticket.repair_cost) ?? null,
+  labor_cost: toNumber(ticket.labor_cost) ?? null,
+  labor_hours: ticket.labor_hours ?? null,
+  total_cost: toNumber(ticket.total_cost) ?? null,
+  payment_status: ticket.payment_status ?? null,
+  priority: ticket.priority,
+  warranty_status: ticket.warranty_status,
+  received_at: toIso(ticket.received_at),
+  target_delivery_at: toIso(ticket.target_delivery_at),
+  created_at: toIso(ticket.created_at),
+  updated_at: toIso(ticket.updated_at),
+  completed_at: toIso(ticket.completed_at),
+  delivered_at: toIso(ticket.delivered_at),
+  created_by: ticket.created_by ?? null,
+  updated_by: ticket.updated_by ?? null,
+  sync_status: ticket.sync_status,
+  location_id: ticket.location_id
+})
+
+export const mapPartRequest = (request: PartRequest) => ({
+  request_id: request.request_id,
+  ticket_id: request.ticket_id,
+  customer_device_id: request.customer_device_id,
+  part_id: request.part_id ?? null,
+  external_item_name: request.external_item_name ?? null,
+  external_model: request.external_model ?? null,
+  external_cost: toNumber(request.external_cost) ?? null,
+  external_receipt_number: request.external_receipt_number ?? null,
+  external_receipt_data_url: request.external_receipt_data_url ?? null,
+  external_receipt_file_name: request.external_receipt_file_name ?? null,
+  external_receipt_file_type: request.external_receipt_file_type ?? null,
+  external_receipt_file_size: request.external_receipt_file_size ?? null,
+  quantity_requested: request.quantity_requested,
+  requested_by: request.requested_by,
+  technician_id: request.technician_id ?? null,
+  requested_at: toIso(request.requested_at),
+  approved_by: request.approved_by ?? null,
+  approved_at: toIso(request.approved_at),
+  status: request.status,
+  source_preference: request.source_preference,
+  notes: request.notes ?? null,
+  location_id: request.location_id,
+  sync_status: request.sync_status
+})
+
+export const mapPartUsage = (usage: PartUsage) => ({
+  usage_id: usage.usage_id,
+  ticket_id: usage.ticket_id,
+  request_id: usage.request_id ?? null,
+  sale_item_id: usage.sale_item_id ?? null,
+  part_id: usage.part_id,
+  quantity_used: usage.quantity_used,
+  unit_cost: toNumber(usage.unit_cost) ?? 0,
+  total_cost: toNumber(usage.total_cost) ?? null,
+  source: usage.source,
+  external_supplier_id: usage.external_supplier_id ?? null,
+  external_reference: usage.external_reference ?? null,
+  used_by: usage.used_by ?? null,
+  used_at: toIso(usage.used_at),
+  notes: usage.notes ?? null,
+  sync_status: usage.sync_status,
+  location_id: usage.location_id
+})

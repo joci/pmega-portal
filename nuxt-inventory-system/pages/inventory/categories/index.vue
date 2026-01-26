@@ -17,6 +17,9 @@
       <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-lg font-semibold text-slate-900">{{ t('inventory.categories.newTitle') }}</h2>
         <form class="mt-4 grid gap-4" @submit.prevent="handleCreate">
+          <div v-if="newCategoryError" class="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            {{ newCategoryError }}
+          </div>
           <div>
             <label class="text-xs font-semibold uppercase text-slate-500">{{ t('inventory.categories.fields.name') }}</label>
             <input
@@ -47,9 +50,6 @@
                 class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
             </div>
-          </div>
-          <div v-if="newCategoryError" class="text-xs text-red-600">
-            {{ newCategoryError }}
           </div>
           <div class="flex flex-wrap gap-3 pt-2">
             <UButton type="submit" color="primary">
@@ -91,19 +91,19 @@
                 <UButton size="xs" color="gray" variant="outline" @click="startEdit(category)">
                   {{ t('inventory.categories.actions.edit') }}
                 </UButton>
-                <UButton
-                  size="xs"
-                  color="red"
-                  variant="outline"
-                  :disabled="usageCount(category.category_id) > 0"
-                  @click="removeCategory(category)"
-                >
+                <UButton size="xs" color="red" variant="outline" @click="openDeleteDialog(category)">
                   {{ t('inventory.categories.actions.delete') }}
                 </UButton>
               </div>
             </div>
 
             <div v-if="editingCategoryId === category.category_id" class="mt-4 border-t border-slate-200 pt-4">
+              <div
+                v-if="editCategoryError"
+                class="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+              >
+                {{ editCategoryError }}
+              </div>
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
                   <label class="text-xs font-semibold uppercase text-slate-500">
@@ -137,9 +137,6 @@
                   class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 />
               </div>
-              <div v-if="editCategoryError" class="mt-3 text-xs text-red-600">
-                {{ editCategoryError }}
-              </div>
               <div class="mt-4 flex flex-wrap gap-3">
                 <UButton size="xs" color="primary" @click="saveEdit(category)">
                   {{ t('inventory.categories.actions.update') }}
@@ -153,6 +150,46 @@
         </div>
       </div>
     </div>
+
+    <UModal v-model:open="isDeleteModalOpen" portal="body">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="text-sm font-semibold text-slate-900">{{ t('inventory.categories.reassignTitle') }}</div>
+          </template>
+          <div class="space-y-4 text-sm text-slate-600">
+            <p>
+              {{ t('inventory.categories.reassignDescription', { count: deleteTargetUsage }) }}
+            </p>
+            <div>
+              <label class="text-xs font-semibold uppercase text-slate-500">
+                {{ t('inventory.categories.reassignLabel') }}
+              </label>
+              <select
+                v-model="reassignCategoryId"
+                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              >
+                <option value="">{{ t('inventory.options.uncategorized') }}</option>
+                <option v-for="category in reassignOptions" :key="category.category_id" :value="category.category_id">
+                  {{ category.name }}
+                </option>
+              </select>
+              <p class="mt-1 text-xs text-slate-500">{{ t('inventory.categories.reassignHelp') }}</p>
+            </div>
+          </div>
+          <template #footer>
+            <div class="flex flex-wrap gap-3">
+              <UButton color="red" @click="confirmDelete">
+                {{ t('inventory.categories.reassignAction') }}
+              </UButton>
+              <UButton color="gray" variant="outline" @click="closeDeleteDialog">
+                {{ t('inventory.categories.actions.cancel') }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </section>
 </template>
 
@@ -179,10 +216,27 @@ const editForm = ref<CategoryInput>({
   category_type: 'PRODUCT'
 })
 const editCategoryError = ref('')
+const isDeleteModalOpen = ref(false)
+const deleteTarget = ref<Category | null>(null)
+const reassignCategoryId = ref('')
 
 const orderedCategories = computed(() =>
   [...store.categories].sort((a, b) => a.name.localeCompare(b.name))
 )
+
+const reassignOptions = computed(() => {
+  if (!deleteTarget.value) {
+    return []
+  }
+  return store.categories.filter((entry) => entry.category_id !== deleteTarget.value?.category_id)
+})
+
+const deleteTargetUsage = computed(() => {
+  if (!deleteTarget.value) {
+    return 0
+  }
+  return usageCount(deleteTarget.value.category_id)
+})
 
 const usageMap = computed(() => {
   const map = new Map<string, number>()
@@ -245,14 +299,35 @@ const saveEdit = async (category: Category) => {
   cancelEdit()
 }
 
-const removeCategory = async (category: Category) => {
-  if (usageCount(category.category_id) > 0) {
+const openDeleteDialog = async (category: Category) => {
+  if (usageCount(category.category_id) === 0) {
+    await store.deleteCategory(category.category_id)
+    if (editingCategoryId.value === category.category_id) {
+      cancelEdit()
+    }
     return
   }
-  await store.deleteCategory(category.category_id)
-  if (editingCategoryId.value === category.category_id) {
+  deleteTarget.value = category
+  reassignCategoryId.value = reassignOptions.value[0]?.category_id ?? ''
+  isDeleteModalOpen.value = true
+}
+
+const closeDeleteDialog = () => {
+  isDeleteModalOpen.value = false
+  deleteTarget.value = null
+  reassignCategoryId.value = ''
+}
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) {
+    return
+  }
+  await store.reassignCategory(deleteTarget.value.category_id, reassignCategoryId.value || null)
+  await store.deleteCategory(deleteTarget.value.category_id)
+  if (editingCategoryId.value === deleteTarget.value.category_id) {
     cancelEdit()
   }
+  closeDeleteDialog()
 }
 
 onMounted(async () => {

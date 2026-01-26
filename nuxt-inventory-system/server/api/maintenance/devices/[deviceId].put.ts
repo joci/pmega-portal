@@ -1,0 +1,28 @@
+import { getPrismaClient } from '~/server/utils/prisma'
+import { mapCustomerDevice } from '~/server/utils/mappers'
+
+export default defineEventHandler(async (event) => {
+  const prisma = getPrismaClient()
+  const deviceId = event.context.params?.deviceId
+  if (!deviceId) {
+    throw createError({ statusCode: 400, statusMessage: 'DEVICE_ID_REQUIRED' })
+  }
+
+  const body = await readBody(event)
+
+  const device = await prisma.customerDevice.update({
+    where: { device_id: deviceId },
+    data: {
+      item_name: body.item_name ?? null,
+      brand: body.brand ?? null,
+      model: body.model ?? null,
+      serial_number: body.serial_number ?? null,
+      purchase_date: body.purchase_date ? new Date(body.purchase_date) : null,
+      warranty_expiry: body.warranty_expiry ? new Date(body.warranty_expiry) : null,
+      notes: body.notes ?? null,
+      sync_status: 'SYNCED'
+    }
+  })
+
+  return mapCustomerDevice(device)
+})

@@ -69,7 +69,7 @@ const openTickets = computed(() => {
 })
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'USD' }).format(value || 0)
+  return new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'ETB' }).format(value || 0)
 }
 
 onMounted(async () => {

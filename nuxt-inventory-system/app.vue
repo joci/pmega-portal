@@ -3,7 +3,7 @@
     <div class="min-h-screen bg-slate-50 text-slate-900">
       <NuxtLoadingIndicator />
       <NuxtRouteAnnouncer />
-      <header class="border-b border-slate-200 bg-white/80 backdrop-blur">
+      <header v-if="!isAuthPage" class="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div class="mx-auto max-w-[91.5rem] px-4 py-4 sm:px-6">
           <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -11,6 +11,16 @@
               <div class="text-xs text-slate-500 sm:text-sm">{{ t('app.tagline') }}</div>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-3">
+              <div v-if="authUser" class="hidden items-center gap-3 text-xs text-slate-500 md:flex">
+                <span>{{ authUser.name || authUser.username }}</span>
+                <button
+                  type="button"
+                  class="font-semibold text-emerald-600 hover:text-emerald-700"
+                  @click="handleLogout"
+                >
+                  {{ t('auth.actions.logout') }}
+                </button>
+              </div>
               <div class="flex items-center gap-2 sm:gap-3">
                 <label class="text-xs text-slate-500" for="lang-select">
                   {{ t('lang.label') }}
@@ -58,6 +68,16 @@
               <NuxtLink :to="localePath('/settings')" class="hover:text-slate-900">
                 {{ t('nav.settings') }}
               </NuxtLink>
+              <NuxtLink v-if="authUser" :to="localePath('/account')" class="hover:text-slate-900">
+                {{ t('nav.account') }}
+              </NuxtLink>
+              <NuxtLink
+                v-if="authUser?.role === 'admin'"
+                :to="localePath('/admin/users')"
+                class="hover:text-slate-900"
+              >
+                {{ t('nav.users') }}
+              </NuxtLink>
             </div>
             <div
               id="primary-nav"
@@ -83,12 +103,37 @@
                 <NuxtLink :to="localePath('/settings')" class="rounded-lg px-2 py-2 hover:bg-slate-100">
                   {{ t('nav.settings') }}
                 </NuxtLink>
+                <NuxtLink
+                  v-if="authUser"
+                  :to="localePath('/account')"
+                  class="rounded-lg px-2 py-2 hover:bg-slate-100"
+                >
+                  {{ t('nav.account') }}
+                </NuxtLink>
+                <NuxtLink
+                  v-if="authUser?.role === 'admin'"
+                  :to="localePath('/admin/users')"
+                  class="rounded-lg px-2 py-2 hover:bg-slate-100"
+                >
+                  {{ t('nav.users') }}
+                </NuxtLink>
+                <button
+                  v-if="authUser"
+                  type="button"
+                  class="rounded-lg px-2 py-2 text-left text-rose-600 hover:bg-slate-100"
+                  @click="handleLogout"
+                >
+                  {{ t('auth.actions.logout') }}
+                </button>
               </div>
             </div>
           </div>
         </nav>
       </header>
-      <main class="mx-auto max-w-[91.5rem] px-4 py-8 sm:px-6 sm:py-10">
+      <main
+        class="mx-auto px-4 py-8 sm:px-6 sm:py-10"
+        :class="isAuthPage ? 'max-w-xl' : 'max-w-[91.5rem]'"
+      >
         <NuxtPage />
       </main>
     </div>
@@ -99,6 +144,8 @@
 const { locale, locales, t, setLocale } = useI18n()
 const localePath = useLocalePath()
 const switchLocalePath = useSwitchLocalePath()
+const route = useRoute()
+const { user, logout } = useAuth()
 
 const localeOptions = computed(() =>
   locales.value.map((entry) =>
@@ -107,6 +154,13 @@ const localeOptions = computed(() =>
 )
 
 const isMenuOpen = ref(false)
+const isAuthPage = computed(() => route.path.includes('/login'))
+const authUser = computed(() => user.value)
+
+const handleLogout = async () => {
+  await logout()
+  await navigateTo(localePath('/login'))
+}
 
 const selectedLocale = computed({
   get: () => locale.value,

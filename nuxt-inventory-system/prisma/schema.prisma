@@ -161,6 +161,51 @@ enum MaintenancePaymentStatus {
   INVOICED
 }
 
+enum UserRole {
+  admin
+  manager
+  staff
+  viewer
+  technician
+  sales
+  maintenance_receiver
+}
+
+model User {
+  user_id       String   @id
+  email         String   @unique
+  username      String   @unique
+  name          String?
+  role          UserRole @default(staff)
+  password_hash String
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  created_by    String?
+  updated_by    String?
+
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Session {
+  session_id   String   @id
+  user_id      String
+  token_hash   String   @unique
+  created_at   DateTime @default(now())
+  expires_at   DateTime
+  last_seen_at DateTime?
+  ip_address   String?
+  user_agent   String?
+  revoked_at   DateTime?
+
+  user User @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("sessions")
+}
+
 model Category {
   category_id   String       @id
   name          String
@@ -168,6 +213,8 @@ model Category {
   category_type CategoryType
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus   @default(SYNCED)
 
   items Item[]
@@ -186,6 +233,8 @@ model Location {
   po_box        String?
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus   @default(SYNCED)
 
   items          Item[]
@@ -206,6 +255,8 @@ model Unit {
   description String?    @db.Text
   created_at  DateTime   @default(now())
   updated_at  DateTime   @updatedAt
+  created_by  String?
+  updated_by  String?
   sync_status SyncStatus @default(SYNCED)
 
   @@map("units")
@@ -222,7 +273,9 @@ model CostSheetEntry {
   vat_rate      Float
   entry_date    DateTime   @default(now())
   created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
+  updated_at    DateTime   @default(now()) @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus @default(SYNCED)
 
   item Item? @relation("CostSheetItem")
@@ -265,6 +318,8 @@ model Item {
   cost_sheet_entry_id String?       @unique
   created_at         DateTime      @default(now())
   updated_at         DateTime      @updatedAt
+  created_by         String?
+  updated_by         String?
   sync_status        SyncStatus    @default(SYNCED)
 
   category       Category?       @relation(fields: [category_id], references: [category_id])
@@ -294,6 +349,8 @@ model Inventory {
   expiry_date      DateTime?
   created_at       DateTime   @default(now())
   updated_at       DateTime   @updatedAt
+  created_by       String?
+  updated_by       String?
   sync_status      SyncStatus @default(SYNCED)
 
   item     Item     @relation(fields: [item_id], references: [item_id])
@@ -315,6 +372,8 @@ model InventoryBatch {
   reference          String?
   created_at         DateTime   @default(now())
   updated_at         DateTime   @updatedAt
+  created_by         String?
+  updated_by         String?
   sync_status        SyncStatus @default(SYNCED)
 
   item     Item     @relation(fields: [item_id], references: [item_id])
@@ -340,6 +399,9 @@ model InventoryMovement {
   attachment_file_type String?
   attachment_file_size Int?
   created_at    DateTime              @default(now())
+  updated_at    DateTime              @default(now()) @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus            @default(SYNCED)
 
   item     Item     @relation(fields: [item_id], references: [item_id])
@@ -358,6 +420,9 @@ model ItemAttachment {
   data_url      String     @db.Text
   sort_order    Int?
   created_at    DateTime   @default(now())
+  updated_at    DateTime   @default(now()) @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus @default(SYNCED)
 
   item Item @relation(fields: [item_id], references: [item_id])
@@ -378,6 +443,8 @@ model Customer {
   customer_type CustomerType?
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus   @default(SYNCED)
 
   devices CustomerDevice[]
@@ -400,6 +467,8 @@ model CustomerDevice {
   notes           String?    @db.Text
   created_at      DateTime   @default(now())
   updated_at      DateTime   @updatedAt
+  created_by      String?
+  updated_by      String?
   sync_status     SyncStatus @default(SYNCED)
 
   customer     Customer          @relation(fields: [customer_id], references: [customer_id])
@@ -448,6 +517,8 @@ model Sale {
   location_id                  String
   created_at                   DateTime      @default(now())
   updated_at                   DateTime      @updatedAt
+  created_by                   String?
+  updated_by                   String?
   sync_status                  SyncStatus    @default(SYNCED)
 
   customer           Customer?         @relation(fields: [customer_id], references: [customer_id])
@@ -470,6 +541,9 @@ model SaleAttachment {
   file_size     Int
   data_url      String     @db.Text
   created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus @default(SYNCED)
 
   sale Sale @relation(fields: [sale_id], references: [sale_id])
@@ -492,6 +566,8 @@ model SaleItem {
   affects_inventory Boolean
   created_at       DateTime   @default(now())
   updated_at       DateTime   @updatedAt
+  created_by       String?
+  updated_by       String?
   sync_status      SyncStatus @default(SYNCED)
 
   sale       Sale       @relation(fields: [sale_id], references: [sale_id])
@@ -516,6 +592,7 @@ model Payment {
   created_at            DateTime     @default(now())
   updated_at            DateTime     @updatedAt
   created_by            String?
+  updated_by            String?
   sync_status           SyncStatus   @default(SYNCED)
 
   sale Sale @relation(fields: [sale_id], references: [sale_id])
@@ -577,6 +654,9 @@ model MaintenanceAttachment {
   file_size     Int
   data_url      String     @db.Text
   created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus @default(SYNCED)
 
   ticket MaintenanceTicket @relation(fields: [ticket_id], references: [ticket_id])
@@ -602,6 +682,10 @@ model PartRequest {
   requested_by      String
   technician_id     String?
   requested_at      DateTime          @default(now())
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @default(now()) @updatedAt
+  created_by        String?
+  updated_by        String?
   approved_by       String?
   approved_at       DateTime?
   status            PartRequestStatus
@@ -636,6 +720,10 @@ model PartUsage {
   external_reference    String?
   used_by               String?
   used_at               DateTime?
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+  created_by            String?
+  updated_by            String?
   notes                 String?    @db.Text
   sync_status           SyncStatus @default(SYNCED)
   location_id           String
@@ -661,6 +749,8 @@ model Setting {
   is_editable   Boolean?
   created_at    DateTime    @default(now())
   updated_at    DateTime    @updatedAt
+  created_by    String?
+  updated_by    String?
   sync_status   SyncStatus  @default(SYNCED)
 
   @@map("settings")

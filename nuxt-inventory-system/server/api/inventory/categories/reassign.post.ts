@@ -1,8 +1,10 @@
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapItem } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
   const fromCategoryId = body?.fromCategoryId
   const toCategoryId = body?.toCategoryId ?? null
@@ -20,6 +22,7 @@ export default defineEventHandler(async (event) => {
     where: { category_id: fromCategoryId },
     data: {
       category_id: toCategoryId,
+      updated_by: user.user_id,
       sync_status: 'SYNCED'
     }
   })

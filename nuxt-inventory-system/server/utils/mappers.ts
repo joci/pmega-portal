@@ -29,6 +29,8 @@ export const mapCategory = (category: Category) => ({
   category_type: category.category_type,
   created_at: toIso(category.created_at),
   updated_at: toIso(category.updated_at),
+  created_by: category.created_by ?? null,
+  updated_by: category.updated_by ?? null,
   sync_status: category.sync_status
 })
 
@@ -43,6 +45,8 @@ export const mapLocation = (location: Location) => ({
   po_box: location.po_box ?? null,
   created_at: toIso(location.created_at),
   updated_at: toIso(location.updated_at),
+  created_by: location.created_by ?? null,
+  updated_by: location.updated_by ?? null,
   sync_status: location.sync_status
 })
 
@@ -52,6 +56,8 @@ export const mapUnit = (unit: Unit) => ({
   description: unit.description ?? null,
   created_at: toIso(unit.created_at),
   updated_at: toIso(unit.updated_at),
+  created_by: unit.created_by ?? null,
+  updated_by: unit.updated_by ?? null,
   sync_status: unit.sync_status
 })
 
@@ -89,6 +95,8 @@ export const mapItem = (item: Item) => ({
   cost_sheet_entry_id: item.cost_sheet_entry_id ?? null,
   created_at: toIso(item.created_at),
   updated_at: toIso(item.updated_at),
+  created_by: item.created_by ?? null,
+  updated_by: item.updated_by ?? null,
   sync_status: item.sync_status
 })
 
@@ -106,6 +114,8 @@ export const mapCostSheetEntry = (entry: CostSheetEntry & { item?: Item | null }
   added_to_inventory: Boolean(entry.item),
   created_at: toIso(entry.created_at),
   updated_at: toIso(entry.updated_at),
+  created_by: entry.created_by ?? null,
+  updated_by: entry.updated_by ?? null,
   sync_status: entry.sync_status
 })
 
@@ -119,6 +129,8 @@ export const mapInventory = (row: Inventory) => ({
   expiry_date: toIso(row.expiry_date),
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
+  created_by: row.created_by ?? null,
+  updated_by: row.updated_by ?? null,
   sync_status: row.sync_status
 })
 
@@ -133,6 +145,8 @@ export const mapInventoryBatch = (batch: InventoryBatch) => ({
   reference: batch.reference ?? null,
   created_at: toIso(batch.created_at),
   updated_at: toIso(batch.updated_at),
+  created_by: batch.created_by ?? null,
+  updated_by: batch.updated_by ?? null,
   sync_status: batch.sync_status
 })
 
@@ -152,6 +166,9 @@ export const mapInventoryMovement = (movement: InventoryMovement) => ({
   attachment_file_type: movement.attachment_file_type ?? null,
   attachment_file_size: movement.attachment_file_size ?? null,
   created_at: toIso(movement.created_at),
+  updated_at: toIso(movement.updated_at),
+  created_by: movement.created_by ?? null,
+  updated_by: movement.updated_by ?? null,
   sync_status: movement.sync_status
 })
 
@@ -164,6 +181,9 @@ export const mapAttachment = (attachment: ItemAttachment) => ({
   data_url: attachment.data_url,
   sort_order: attachment.sort_order ?? null,
   created_at: toIso(attachment.created_at),
+  updated_at: toIso(attachment.updated_at),
+  created_by: attachment.created_by ?? null,
+  updated_by: attachment.updated_by ?? null,
   sync_status: attachment.sync_status
 })
 
@@ -177,6 +197,8 @@ export const mapSetting = (setting: Setting) => ({
   is_editable: setting.is_editable ?? null,
   created_at: toIso(setting.created_at),
   updated_at: toIso(setting.updated_at),
+  created_by: setting.created_by ?? null,
+  updated_by: setting.updated_by ?? null,
   sync_status: setting.sync_status
 })
 
@@ -216,6 +238,8 @@ export const mapSale = (sale: Sale) => ({
   location_id: sale.location_id,
   created_at: toIso(sale.created_at),
   updated_at: toIso(sale.updated_at),
+  created_by: sale.created_by ?? null,
+  updated_by: sale.updated_by ?? null,
   sync_status: sale.sync_status
 })
 
@@ -233,6 +257,8 @@ export const mapSaleItem = (item: SaleItem) => ({
   affects_inventory: item.affects_inventory,
   created_at: toIso(item.created_at),
   updated_at: toIso(item.updated_at),
+  created_by: item.created_by ?? null,
+  updated_by: item.updated_by ?? null,
   sync_status: item.sync_status
 })
 
@@ -249,6 +275,7 @@ export const mapPayment = (payment: Payment) => ({
   created_at: toIso(payment.created_at),
   updated_at: toIso(payment.updated_at),
   created_by: payment.created_by ?? null,
+  updated_by: payment.updated_by ?? null,
   sync_status: payment.sync_status
 })
 
@@ -260,6 +287,9 @@ export const mapSaleAttachment = (attachment: SaleAttachment) => ({
   file_size: attachment.file_size,
   data_url: attachment.data_url,
   created_at: toIso(attachment.created_at),
+  updated_at: toIso(attachment.updated_at),
+  created_by: attachment.created_by ?? null,
+  updated_by: attachment.updated_by ?? null,
   sync_status: attachment.sync_status
 })
 
@@ -271,6 +301,9 @@ export const mapMaintenanceAttachment = (attachment: MaintenanceAttachment) => (
   file_size: attachment.file_size,
   data_url: attachment.data_url,
   created_at: toIso(attachment.created_at),
+  updated_at: toIso(attachment.updated_at),
+  created_by: attachment.created_by ?? null,
+  updated_by: attachment.updated_by ?? null,
   sync_status: attachment.sync_status
 })
 
@@ -286,6 +319,8 @@ export const mapCustomer = (customer: Customer) => ({
   customer_type: customer.customer_type ?? null,
   created_at: toIso(customer.created_at),
   updated_at: toIso(customer.updated_at),
+  created_by: customer.created_by ?? null,
+  updated_by: customer.updated_by ?? null,
   sync_status: customer.sync_status
 })
 
@@ -302,6 +337,8 @@ export const mapCustomerDevice = (device: CustomerDevice) => ({
   notes: device.notes ?? null,
   created_at: toIso(device.created_at),
   updated_at: toIso(device.updated_at),
+  created_by: device.created_by ?? null,
+  updated_by: device.updated_by ?? null,
   sync_status: device.sync_status
 })
 
@@ -354,6 +391,10 @@ export const mapPartRequest = (request: PartRequest) => ({
   requested_by: request.requested_by,
   technician_id: request.technician_id ?? null,
   requested_at: toIso(request.requested_at),
+  created_at: toIso(request.created_at),
+  updated_at: toIso(request.updated_at),
+  created_by: request.created_by ?? null,
+  updated_by: request.updated_by ?? null,
   approved_by: request.approved_by ?? null,
   approved_at: toIso(request.approved_at),
   status: request.status,
@@ -377,6 +418,10 @@ export const mapPartUsage = (usage: PartUsage) => ({
   external_reference: usage.external_reference ?? null,
   used_by: usage.used_by ?? null,
   used_at: toIso(usage.used_at),
+  created_at: toIso(usage.created_at),
+  updated_at: toIso(usage.updated_at),
+  created_by: usage.created_by ?? null,
+  updated_by: usage.updated_by ?? null,
   notes: usage.notes ?? null,
   sync_status: usage.sync_status,
   location_id: usage.location_id

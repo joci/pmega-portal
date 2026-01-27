@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapAttachment } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   if (!body?.item_id) {
@@ -22,6 +24,7 @@ export default defineEventHandler(async (event) => {
       file_size: body.file_size ?? 0,
       data_url: body.data_url,
       sort_order: body.sort_order ?? null,
+      created_by: user.user_id,
       sync_status: 'SYNCED'
     }
   })

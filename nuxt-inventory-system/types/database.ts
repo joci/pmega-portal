@@ -31,6 +31,28 @@ export type PartRequestStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'FULFILL
 
 export type SettingType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'DATE'
 
+export type UserRole =
+  | 'admin'
+  | 'manager'
+  | 'staff'
+  | 'viewer'
+  | 'technician'
+  | 'sales'
+  | 'maintenance_receiver'
+
+export interface User {
+  user_id: string
+  email: string
+  username: string
+  name?: string | null
+  role: UserRole
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
+}
+
 export interface Category {
   category_id: string
   name: string
@@ -38,6 +60,8 @@ export interface Category {
   category_type: CategoryType
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -52,6 +76,8 @@ export interface Location {
   po_box?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -89,6 +115,8 @@ export interface Item {
   cost_sheet_entry_id?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -102,6 +130,8 @@ export interface Inventory {
   expiry_date?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -111,6 +141,8 @@ export interface Unit {
   description?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -128,6 +160,8 @@ export interface CostSheetEntry {
   added_to_inventory?: boolean
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -142,6 +176,8 @@ export interface InventoryBatch {
   reference?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -161,6 +197,9 @@ export interface InventoryMovement {
   attachment_file_type?: string | null
   attachment_file_size?: number | null
   created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -173,6 +212,9 @@ export interface ItemAttachment {
   data_url: string
   sort_order?: number | null
   created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -188,6 +230,8 @@ export interface Customer {
   customer_type?: 'RETAIL' | 'MAINTENANCE' | 'BOTH'
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -204,6 +248,8 @@ export interface CustomerDevice {
   notes?: string | null
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -243,6 +289,8 @@ export interface Sale {
   location_id: string
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -260,6 +308,8 @@ export interface SaleItem {
   affects_inventory: boolean
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -276,6 +326,7 @@ export interface Payment {
   created_at?: string
   updated_at?: string
   created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -287,6 +338,9 @@ export interface SaleAttachment {
   file_size: number
   data_url: string
   created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -298,6 +352,9 @@ export interface MaintenanceAttachment {
   file_size: number
   data_url: string
   created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }
 
@@ -350,6 +407,10 @@ export interface PartRequest {
   requested_by: string
   technician_id?: string | null
   requested_at?: string
+  created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   approved_by?: string | null
   approved_at?: string | null
   status: PartRequestStatus
@@ -373,6 +434,10 @@ export interface PartUsage {
   external_reference?: string | null
   used_by?: string | null
   used_at?: string
+  created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   notes?: string | null
   sync_status?: SyncStatus
   location_id: string
@@ -388,5 +453,7 @@ export interface Setting {
   is_editable?: boolean
   created_at?: string
   updated_at?: string
+  created_by?: string | null
+  updated_by?: string | null
   sync_status?: SyncStatus
 }

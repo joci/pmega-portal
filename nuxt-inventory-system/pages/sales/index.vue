@@ -114,9 +114,17 @@
               <td class="py-3 pr-4 text-sm text-slate-700">{{ locationName(sale.location_id) }}</td>
               <td class="py-3 pr-4 text-right text-sm text-slate-700">{{ formatCurrency(sale.total_amount) }}</td>
               <td class="py-3 text-right">
-                <NuxtLink :to="localePath(`/sales/${sale.sale_id}`)">
-                  <UButton size="xs" color="gray" variant="outline">{{ t('sales.list.view') }}</UButton>
-                </NuxtLink>
+                <div class="flex justify-end gap-2">
+                  <NuxtLink :to="localePath(`/sales/${sale.sale_id}`)">
+                    <UButton size="xs" color="gray" variant="outline">{{ t('sales.list.view') }}</UButton>
+                  </NuxtLink>
+                  <NuxtLink
+                    v-if="canEditSale(sale)"
+                    :to="localePath({ path: '/sales/new', query: { sale: sale.sale_id } })"
+                  >
+                    <UButton size="xs" color="primary" variant="outline">{{ t('sales.list.edit') }}</UButton>
+                  </NuxtLink>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -131,6 +139,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useSalesStore } from '~/stores/sales'
 import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
 import type { Sale } from '~/types/database'
 import { useFlashMessage, type FlashMessage } from '~/composables/useFlashMessage'
 
@@ -139,11 +148,13 @@ type SortKey = 'number' | 'customer' | 'date' | 'type' | 'status' | 'location' |
 const store = useSalesStore()
 const inventoryStore = useInventoryStore()
 const { can, loadPermissions } = usePermissions()
+const { user } = useAuth()
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
 
 const canViewSales = computed(() => can('sales.view'))
 const canCreateSales = computed(() => can('sales.create'))
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 const { consumeFlashMessage } = useFlashMessage()
 const pageMessage = ref<FlashMessage | null>(null)
@@ -194,6 +205,13 @@ const filteredSales = computed(() => {
     return fields.some((field) => String(field).toLowerCase().includes(query))
   })
 })
+
+const canEditSale = (sale: Sale) => {
+  if (!canCreateSales.value) {
+    return false
+  }
+  return sale.status !== 'COMPLETED' || isAdmin.value
+}
 
 const sortedSales = computed(() => {
   const items = [...filteredSales.value]

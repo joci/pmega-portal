@@ -129,6 +129,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useInventoryStore, type CostSheetEntryInput } from '~/stores/inventory'
 import { useSettingsStore } from '~/stores/settings'
 import { usePermissions } from '~/composables/usePermissions'
+import { useFlashMessage } from '~/composables/useFlashMessage'
 import type { CostSheetEntry } from '~/types/database'
 
 const store = useInventoryStore()
@@ -138,6 +139,7 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
+const { setFlashMessage } = useFlashMessage()
 
 const canViewInventory = computed(() => can('inventory.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
@@ -253,12 +255,19 @@ const handleSubmit = async () => {
       quantity: form.value.quantity,
       unit_cost: form.value.unit_cost
     }
+    const wasEditing = Boolean(editingEntryId.value)
     if (editingEntryId.value) {
       await store.updateCostSheetEntry(editingEntryId.value, payload)
     } else {
       await store.createCostSheetEntry(payload)
     }
-    await resetForm()
+    setFlashMessage({
+      type: 'primary',
+      text: wasEditing
+        ? t('inventory.costSheetPage.messages.updated')
+        : t('inventory.costSheetPage.messages.created')
+    })
+    await router.push(localePath('/inventory/cost-sheet'))
   } catch (error) {
     const status = (error as { response?: { status?: number } })?.response?.status
     const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage

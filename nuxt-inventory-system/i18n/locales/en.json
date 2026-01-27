@@ -10,6 +10,8 @@
     "partRequests": "Part Requests",
     "reports": "Reports",
     "settings": "Settings",
+    "users": "Users",
+    "account": "Account",
     "menuOpen": "Menu",
     "menuClose": "Close"
   },
@@ -120,6 +122,10 @@
       "badges": {
         "added": "Added",
         "pending": "Not added"
+      },
+      "messages": {
+        "created": "Cost sheet entry created.",
+        "updated": "Cost sheet entry updated."
       },
       "validation": {
         "dateRequired": "Date is required.",
@@ -417,10 +423,12 @@
       "location": "Location",
       "total": "Total",
       "actions": "Actions",
-      "view": "View"
+      "view": "View",
+      "edit": "Edit"
     },
     "form": {
       "title": "Create Sale",
+      "editTitle": "Update Sale",
       "addLine": "Add Line",
       "linesTitle": "Line Items",
       "noLines": "Add at least one line item to create a sale."
@@ -466,6 +474,7 @@
       "paymentCheck": "Check",
       "selectLocation": "Select location",
       "selectItem": "Select item",
+      "noItemMatches": "No items found.",
       "product": "Product",
       "sparePart": "Spare Part",
       "labor": "Labor",
@@ -487,6 +496,9 @@
       "locationRequired": "Select a location before saving.",
       "lineRequired": "Add at least one line item.",
       "saved": "Sale saved.",
+      "updated": "Sale updated.",
+      "locked": "Completed sales can only be edited by an admin.",
+      "lineItemsLocked": "Line items are locked for existing sales.",
       "insufficientStock": "Not enough stock available for one or more items.",
       "discountNotAllowed": "Discounts are currently disabled in settings.",
       "attachmentTooLarge": "\"{name}\" exceeds 5 MB."
@@ -623,6 +635,7 @@
       },
       "part": "Part",
       "selectPart": "Select part",
+      "noPartMatches": "No parts found.",
       "externalItemName": "External item name",
       "externalModel": "External model",
       "receiptNumber": "Receipt Number",
@@ -710,6 +723,87 @@
       "deleteDescription": "Remove \"{name}\" from this ticket?",
       "deleteConfirm": "Delete",
       "deleteCancel": "Cancel"
+    }
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Use your username or email to continue.",
+    "bootstrapSubtitle": "Create the first admin user to get started.",
+    "fields": {
+      "identifier": "Username or Email",
+      "email": "Email",
+      "username": "Username",
+      "name": "Full Name",
+      "password": "Password",
+      "confirmPassword": "Confirm Password"
+    },
+    "actions": {
+      "login": "Sign in",
+      "bootstrap": "Create Admin",
+      "logout": "Log out"
+    },
+    "messages": {
+      "loginFailed": "Login failed. Check your credentials.",
+      "passwordMismatch": "Passwords do not match."
+    }
+  },
+  "account": {
+    "title": "Account",
+    "subtitle": "Update your password.",
+    "fields": {
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "actions": {
+      "updatePassword": "Update password"
+    },
+    "messages": {
+      "passwordMismatch": "Passwords do not match.",
+      "currentInvalid": "Current password is incorrect.",
+      "updated": "Password updated successfully.",
+      "updateFailed": "Failed to update password."
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "subtitle": "Create users and assign roles.",
+    "createTitle": "Register user",
+    "listTitle": "All users",
+    "empty": "No users found.",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "username": "Username",
+      "role": "Role",
+      "status": "Status",
+      "password": "Password"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "actions": {
+      "create": "Create user",
+      "update": "Update",
+      "resetPassword": "Reset password",
+      "actions": "Actions"
+    },
+    "reset": {
+      "title": "Reset password",
+      "subtitle": "Reset password for",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Reset password",
+      "cancel": "Cancel",
+      "passwordRequired": "Password is required.",
+      "passwordMismatch": "Passwords do not match."
+    },
+    "messages": {
+      "createFailed": "Failed to create user.",
+      "updateFailed": "Failed to update user.",
+      "resetSuccess": "Password reset successfully.",
+      "resetFailed": "Failed to reset password."
     }
   },
   "reports": {

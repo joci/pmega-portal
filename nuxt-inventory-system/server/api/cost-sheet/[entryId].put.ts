@@ -1,8 +1,10 @@
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapCostSheetEntry } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const entryId = event.context.params?.entryId
   if (!entryId) {
     throw createError({ statusCode: 400, statusMessage: 'COST_SHEET_ID_REQUIRED' })
@@ -59,6 +61,7 @@ export default defineEventHandler(async (event) => {
       total_with_vat: totalWithVat,
       vat_rate: normalizedVatRate,
       entry_date: entryDate,
+      updated_by: user.user_id,
       sync_status: 'SYNCED'
     },
     include: { item: true }

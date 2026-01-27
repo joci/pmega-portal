@@ -231,9 +231,6 @@ const partsTotal = (ticketId: string) => {
 }
 
 const ticketTotal = (ticket: MaintenanceTicket) => {
-  if (ticket.total_cost != null) {
-    return ticket.total_cost
-  }
   const labor = Number(ticket.labor_cost ?? 0)
   const laborValue = Number.isNaN(labor) ? 0 : labor
   const subtotal = partsTotal(ticket.ticket_id) + laborValue

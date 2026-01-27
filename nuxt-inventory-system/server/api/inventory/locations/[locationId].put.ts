@@ -1,10 +1,11 @@
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapLocation } from '~/server/utils/mappers'
 import { getRolePermissions } from '~/utils/permissions'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const role = String(config.appRole || 'viewer').toLowerCase()
+  const user = await requireAuthUser(event)
+  const role = String(user.role || 'viewer').toLowerCase()
   const permissions = getRolePermissions(role)
   if (!permissions.includes('inventory.locations.manage')) {
     throw createError({ statusCode: 403, statusMessage: 'FORBIDDEN' })
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
       city: body.city ?? null,
       country: body.country ?? null,
       po_box: body.po_box ?? null,
+      updated_by: user.user_id,
       sync_status: 'SYNCED'
     }
   })

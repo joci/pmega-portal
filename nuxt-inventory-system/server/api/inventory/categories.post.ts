@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapCategory } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   if (!body?.name) {
@@ -16,6 +18,7 @@ export default defineEventHandler(async (event) => {
       name: body.name,
       description: body.description ?? null,
       category_type: body.category_type,
+      created_by: user.user_id,
       sync_status: 'SYNCED'
     }
   })

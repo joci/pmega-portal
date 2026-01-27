@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapInventory, mapInventoryBatch, mapInventoryMovement } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   if (!body?.item_id || !body?.from_location_id || !body?.to_location_id) {
@@ -99,6 +101,7 @@ export default defineEventHandler(async (event) => {
         where: { batch_id: batch.batch_id },
         data: {
           quantity_remaining: batch.quantity_remaining - deduct,
+          updated_by: user.user_id,
           sync_status: 'SYNCED'
         }
       })
@@ -115,6 +118,7 @@ export default defineEventHandler(async (event) => {
           quantity_remaining: deduct,
           unit_cost: batch.unit_cost,
             reference: transferReference,
+            created_by: user.user_id,
             sync_status: 'SYNCED'
           }
         })
@@ -134,37 +138,41 @@ export default defineEventHandler(async (event) => {
         where: {
           item_id_location_id: { item_id: body.item_id, location_id: body.from_location_id }
         },
-        update: {
-          quantity: { decrement: quantity },
-          sync_status: 'SYNCED'
-        },
-        create: {
-          inventory_id: createId(),
-          item_id: body.item_id,
-          location_id: body.from_location_id,
-          quantity: 0,
-          reserved_quantity: 0,
-          sync_status: 'SYNCED'
-        }
-      }),
+      update: {
+        quantity: { decrement: quantity },
+        updated_by: user.user_id,
+        sync_status: 'SYNCED'
+      },
+      create: {
+        inventory_id: createId(),
+        item_id: body.item_id,
+        location_id: body.from_location_id,
+        quantity: 0,
+        reserved_quantity: 0,
+        created_by: user.user_id,
+        sync_status: 'SYNCED'
+      }
+    }),
       tx.inventory.upsert({
         where: {
           item_id_location_id: { item_id: body.item_id, location_id: body.to_location_id }
         },
-        update: {
-          quantity: { increment: quantity },
-          sync_status: 'SYNCED'
-        },
-        create: {
-          inventory_id: createId(),
-          item_id: body.item_id,
-          location_id: body.to_location_id,
-          quantity,
-          reserved_quantity: 0,
-          sync_status: 'SYNCED'
-        }
-      })
-    ])
+      update: {
+        quantity: { increment: quantity },
+        updated_by: user.user_id,
+        sync_status: 'SYNCED'
+      },
+      create: {
+        inventory_id: createId(),
+        item_id: body.item_id,
+        location_id: body.to_location_id,
+        quantity,
+        reserved_quantity: 0,
+        created_by: user.user_id,
+        sync_status: 'SYNCED'
+      }
+    })
+  ])
 
     const unitCost = costQuantity > 0 ? costTotal / costQuantity : null
 
@@ -182,6 +190,7 @@ export default defineEventHandler(async (event) => {
           employee_name: normalizedEmployeeName,
           ...normalizedAttachment,
           created_at: transferredAt,
+          created_by: user.user_id,
           sync_status: 'SYNCED'
         }
       }),
@@ -198,6 +207,7 @@ export default defineEventHandler(async (event) => {
           employee_name: normalizedEmployeeName,
           ...normalizedAttachment,
           created_at: transferredAt,
+          created_by: user.user_id,
           sync_status: 'SYNCED'
         }
       })

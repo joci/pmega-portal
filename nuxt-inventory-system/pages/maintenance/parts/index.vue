@@ -95,15 +95,38 @@
           <div v-if="partRequestMode === 'internal'" class="space-y-4">
             <div>
               <label class="text-xs font-semibold uppercase text-slate-500">{{ t('maintenance.partRequest.part') }}</label>
-              <select
-                v-model="partRequestForm.part_id"
-                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="">{{ t('maintenance.partRequest.selectPart') }}</option>
-                <option v-for="item in inventoryStore.items" :key="item.item_id" :value="item.item_id">
-                  {{ item.name }}
-                </option>
-              </select>
+              <div class="relative mt-1">
+                <input
+                  v-model="partRequestForm.part_query"
+                  class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  :placeholder="t('maintenance.partRequest.selectPart')"
+                  @focus="openPartMenu"
+                  @input="handlePartInput"
+                  @keydown.enter.prevent="selectFirstPartMatch"
+                  @keydown.escape="closePartMenu"
+                  @blur="scheduleClosePartMenu"
+                />
+                <div
+                  v-if="isPartMenuOpen"
+                  class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                >
+                  <div v-if="filteredParts.length === 0" class="px-3 py-2 text-xs text-slate-500">
+                    {{ t('maintenance.partRequest.noPartMatches') }}
+                  </div>
+                  <div v-else class="max-h-64 overflow-auto">
+                    <button
+                      v-for="item in filteredParts"
+                      :key="item.item_id"
+                      type="button"
+                      class="flex w-full flex-col gap-1 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                      @mousedown.prevent="selectPart(item)"
+                    >
+                      <span class="font-semibold text-slate-900">{{ partLabel(item) }}</span>
+                      <span class="text-xs text-slate-500">{{ formatCurrency(Number(item.price ?? 0)) }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
               <div>
@@ -351,7 +374,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useMaintenanceStore } from '~/stores/maintenance'
 import { usePermissions } from '~/composables/usePermissions'
-import type { MaintenanceTicket, PartRequest } from '~/types/database'
+import type { Item, MaintenanceTicket, PartRequest } from '~/types/database'
 
 const store = useMaintenanceStore()
 const inventoryStore = useInventoryStore()
@@ -366,9 +389,12 @@ const selectedTicketId = ref('')
 const searchQuery = ref('')
 const partRequestMode = ref<'internal' | 'external'>('internal')
 const partRequestMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
+const maxPartMatches = 12
+const isPartMenuOpen = ref(false)
 
 const partRequestForm = reactive({
   part_id: '',
+  part_query: '',
   quantity_requested: 1,
   requested_by: '',
   technician_id: '',
@@ -386,6 +412,7 @@ const partRequestForm = reactive({
 
 const customersById = computed(() => new Map(store.customers.map((entry) => [entry.customer_id, entry])))
 const devicesById = computed(() => new Map(store.customerDevices.map((entry) => [entry.device_id, entry])))
+const itemsById = computed(() => new Map(inventoryStore.items.map((entry) => [entry.item_id, entry])))
 
 const selectedTicket = computed(() =>
   store.tickets.find((entry) => entry.ticket_id === selectedTicketId.value)
@@ -445,11 +472,33 @@ const partModel = (request: PartRequest) => {
   return request.external_model ?? ''
 }
 
+const partLabel = (item: Item) => {
+  const base = [item.name, item.model].filter(Boolean).join(' • ')
+  const sku = item.sku ? ` (${item.sku})` : ''
+  return `${base}${sku}`.trim()
+}
+
+const partSearchText = (item: Item) => {
+  return [item.name, item.model, item.sku, item.vendor_sku, item.barcode].filter(Boolean).join(' ').toLowerCase()
+}
+
+const sortedParts = computed(() => {
+  return [...inventoryStore.items].sort((a, b) => partLabel(a).localeCompare(partLabel(b)))
+})
+
+const filteredParts = computed(() => {
+  const query = partRequestForm.part_query.trim().toLowerCase()
+  if (!query) {
+    return sortedParts.value.slice(0, maxPartMatches)
+  }
+  return sortedParts.value.filter((item) => partSearchText(item).includes(query)).slice(0, maxPartMatches)
+})
+
 const selectedPartUnitAmount = computed(() => {
   if (!partRequestForm.part_id) {
     return null
   }
-  const item = inventoryStore.items.find((entry) => entry.item_id === partRequestForm.part_id)
+  const item = itemsById.value.get(partRequestForm.part_id)
   if (!item || item.price == null) {
     return null
   }
@@ -563,6 +612,7 @@ const listTitle = computed(() =>
 
 const resetPartRequestForm = () => {
   partRequestForm.part_id = ''
+  partRequestForm.part_query = ''
   partRequestForm.quantity_requested = 1
   partRequestForm.requested_by = ''
   partRequestForm.technician_id = selectedTicket.value?.technician_id ?? ''
@@ -578,6 +628,7 @@ const resetPartRequestForm = () => {
   partRequestForm.external_receipt_file_size = 0
   partRequestMode.value = 'internal'
   partRequestMessage.value = null
+  isPartMenuOpen.value = false
 }
 
 const handleExternalReceipt = (event: Event) => {
@@ -621,6 +672,65 @@ const formatDate = (value?: string | null) => {
     return '-'
   }
   return new Date(value).toLocaleDateString(locale.value)
+}
+
+const openPartMenu = () => {
+  isPartMenuOpen.value = true
+}
+
+const closePartMenu = () => {
+  isPartMenuOpen.value = false
+}
+
+const scheduleClosePartMenu = () => {
+  if (!process.client) {
+    return
+  }
+  window.setTimeout(() => {
+    isPartMenuOpen.value = false
+  }, 150)
+}
+
+const handlePartInput = () => {
+  openPartMenu()
+  const query = partRequestForm.part_query.trim()
+  if (!query) {
+    partRequestForm.part_id = ''
+    return
+  }
+  const item = partRequestForm.part_id ? itemsById.value.get(partRequestForm.part_id) : null
+  if (item && partLabel(item).toLowerCase() !== query.toLowerCase()) {
+    partRequestForm.part_id = ''
+  }
+}
+
+const selectPart = (item: Item) => {
+  partRequestForm.part_id = item.item_id
+  partRequestForm.part_query = partLabel(item)
+  isPartMenuOpen.value = false
+}
+
+const selectFirstPartMatch = () => {
+  if (!partRequestForm.part_query.trim()) {
+    return
+  }
+  if (filteredParts.value.length > 0) {
+    selectPart(filteredParts.value[0])
+  }
+}
+
+const syncPartQuery = () => {
+  if (!partRequestForm.part_id) {
+    return
+  }
+  const item = itemsById.value.get(partRequestForm.part_id)
+  if (!item) {
+    return
+  }
+  const label = partLabel(item)
+  if (!partRequestForm.part_query || partRequestForm.part_query.toLowerCase() !== label.toLowerCase()) {
+    partRequestForm.part_query = label
+  }
 }
 
 const submitPartRequest = async () => {
@@ -718,6 +828,13 @@ watch(
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => partRequestForm.part_id,
+  () => {
+    syncPartQuery()
+  }
 )
 
 onMounted(async () => {

@@ -1,7 +1,9 @@
 import { getPrismaClient } from '~/server/utils/prisma'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
   const itemId = body?.item_id
   const orderedIds = Array.isArray(body?.ordered_ids) ? body.ordered_ids : []
@@ -17,6 +19,7 @@ export default defineEventHandler(async (event) => {
         data: {
           item_id: itemId,
           sort_order: index,
+          updated_by: user.user_id,
           sync_status: 'SYNCED'
         }
       })

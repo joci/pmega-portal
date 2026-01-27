@@ -18,6 +18,10 @@
       </div>
     </div>
 
+    <div v-if="pageMessage" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+      <UAlert :color="pageMessage.type ?? 'primary'" :title="pageMessage.text" />
+    </div>
+
     <div v-if="!canViewInventory" class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
       {{ t('permissions.noAccess') }}
     </div>
@@ -155,6 +159,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { usePermissions } from '~/composables/usePermissions'
 import type { CostSheetEntry } from '~/types/database'
+import { useFlashMessage, type FlashMessage } from '~/composables/useFlashMessage'
 
 type SortKey = 'date' | 'item' | 'model' | 'unit' | 'quantity' | 'unitCost' | 'total' | 'status'
 
@@ -165,6 +170,9 @@ const localePath = useLocalePath()
 
 const canViewInventory = computed(() => can('inventory.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
+
+const { consumeFlashMessage } = useFlashMessage()
+const pageMessage = ref<FlashMessage | null>(null)
 
 const searchQuery = ref('')
 const sortKey = ref<SortKey>('date')
@@ -267,6 +275,7 @@ const formatDate = (value?: string | null) => {
 
 onMounted(async () => {
   await loadPermissions()
+  pageMessage.value = consumeFlashMessage()
   if (!store.isLoaded) {
     await store.loadAll()
   }

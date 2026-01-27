@@ -6,11 +6,16 @@
 
     <div v-else class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-slate-900">{{ t('sales.form.title') }}</h2>
+        <h2 class="text-lg font-semibold text-slate-900">
+          {{ isEditing ? t('sales.form.editTitle') : t('sales.form.title') }}
+        </h2>
       </div>
 
       <div v-if="formMessage" class="mt-4">
         <UAlert :color="formMessage.type" :title="formMessage.text" />
+      </div>
+      <div v-else-if="isEditLocked" class="mt-4">
+        <UAlert color="red" :title="t('sales.messages.locked')" />
       </div>
 
       <div v-if="!canCreateSales" class="mt-4 text-xs text-slate-500">
@@ -24,6 +29,7 @@
             <select
               v-model="saleForm.sale_type"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             >
               <option value="RETAIL">{{ t('sales.options.retail') }}</option>
               <option value="MAINTENANCE">{{ t('sales.options.maintenance') }}</option>
@@ -35,6 +41,7 @@
             <select
               v-model="saleForm.status"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             >
               <option value="OPEN">{{ t('sales.options.open') }}</option>
               <option value="COMPLETED">{{ t('sales.options.completed') }}</option>
@@ -47,6 +54,7 @@
             <select
               v-model="saleForm.payment_status"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             >
               <option value="UNPAID">{{ t('sales.options.unpaid') }}</option>
               <option value="PARTIAL">{{ t('sales.options.partial') }}</option>
@@ -64,6 +72,7 @@
             <input
               v-model="saleForm.receipt_number"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
           <div>
@@ -73,6 +82,7 @@
             <select
               v-model="saleForm.payment_method"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             >
               <option value="">{{ t('sales.options.selectPaymentMethod') }}</option>
               <option value="CASH">{{ t('sales.options.paymentCash') }}</option>
@@ -88,6 +98,7 @@
             <select
               v-model="saleForm.location_id"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             >
               <option value="">{{ t('sales.options.selectLocation') }}</option>
               <option
@@ -105,6 +116,7 @@
               v-model="saleForm.customer_id"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               :placeholder="t('sales.placeholders.customerId')"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
         </div>
@@ -114,6 +126,7 @@
             <input
               v-model="saleForm.customer_name"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
           <div>
@@ -121,6 +134,7 @@
             <input
               v-model="saleForm.customer_phone"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
         </div>
@@ -130,6 +144,7 @@
             <input
               v-model="saleForm.customer_tin"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
           <div>
@@ -139,6 +154,7 @@
             <input
               v-model="saleForm.customer_vat_registration_no"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked"
             />
           </div>
         </div>
@@ -153,6 +169,7 @@
             accept="image/*,application/pdf"
             class="mt-1 w-full text-sm"
             @change="handleAttachmentSelect"
+            :disabled="!canCreateSales || isEditLocked"
           />
           <div v-if="attachmentErrors.length" class="mt-2 space-y-1 text-xs text-rose-600">
             <div v-for="message in attachmentErrors" :key="message">{{ message }}</div>
@@ -182,7 +199,7 @@
             <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
               {{ t('sales.form.linesTitle') }}
             </div>
-            <UButton size="xs" color="primary" :disabled="!canCreateSales" @click="addLineItem">
+            <UButton size="xs" color="primary" :disabled="!canCreateSales || lineItemsLocked" @click="addLineItem">
               {{ t('sales.form.addLine') }}
             </UButton>
           </div>
@@ -203,16 +220,39 @@
               <tbody>
                 <tr v-for="(line, index) in lineItems" :key="line.tempId" class="border-b border-slate-100">
                   <td class="py-3 pr-4 align-top">
-                    <select
-                      v-model="line.item_id"
-                      class="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm"
-                      @change="setItemDetails(line)"
-                    >
-                      <option value="">{{ t('sales.options.selectItem') }}</option>
-                      <option v-for="item in inventoryStore.items" :key="item.item_id" :value="item.item_id">
-                        {{ item.name }}
-                      </option>
-                    </select>
+                    <div class="relative">
+                      <input
+                        v-model="line.item_query"
+                        class="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm"
+                        :placeholder="t('sales.options.selectItem')"
+                        @focus="openItemMenu(line)"
+                        @input="handleItemInput(line)"
+                        @keydown.enter.prevent="selectFirstMatch(line)"
+                        @keydown.escape="closeItemMenu(line)"
+                        @blur="scheduleCloseItemMenu(line)"
+                        :disabled="lineItemsLocked || !canCreateSales"
+                      />
+                      <div
+                        v-if="isItemMenuOpen(line)"
+                        class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                      >
+                        <div v-if="filteredItems(line).length === 0" class="px-3 py-2 text-xs text-slate-500">
+                          {{ t('sales.options.noItemMatches') }}
+                        </div>
+                        <div v-else class="max-h-64 overflow-auto">
+                          <button
+                            v-for="item in filteredItems(line)"
+                            :key="item.item_id"
+                            type="button"
+                            class="flex w-full flex-col gap-1 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                            @mousedown.prevent="selectItem(line, item)"
+                          >
+                            <span class="font-semibold text-slate-900">{{ itemLabel(item) }}</span>
+                            <span class="text-xs text-slate-500">{{ formatCurrency(Number(item.price ?? 0)) }}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td class="py-3 pr-4 align-top">
                     <div
@@ -227,6 +267,7 @@
                       type="number"
                       min="1"
                       class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-right"
+                      :disabled="lineItemsLocked || !canCreateSales"
                     />
                   </td>
                   <td class="py-3 pr-4 text-right align-top">
@@ -236,11 +277,19 @@
                       min="0"
                       step="0.01"
                       class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-right"
+                      :disabled="lineItemsLocked || !canCreateSales"
                     />
                   </td>
                   <td class="py-3 text-right align-top">
                     <div class="font-semibold text-slate-900">{{ formatCurrency(lineTotal(line)) }}</div>
-                    <UButton size="xs" color="gray" variant="outline" class="mt-2" @click="removeLineItem(index)">
+                    <UButton
+                      size="xs"
+                      color="gray"
+                      variant="outline"
+                      class="mt-2"
+                      :disabled="lineItemsLocked || !canCreateSales"
+                      @click="removeLineItem(index)"
+                    >
                       {{ t('sales.actions.removeLine') }}
                     </UButton>
                   </td>
@@ -268,7 +317,7 @@
                     min="0"
                     step="0.01"
                     class="w-28 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm"
-                    :disabled="!canCreateSales || !isDiscountEnabled"
+                    :disabled="!canCreateSales || !isDiscountEnabled || isEditLocked"
                   />
                 </div>
                 <div class="flex items-center justify-between gap-3">
@@ -292,11 +341,12 @@
             v-model="saleForm.notes"
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             rows="2"
+            :disabled="!canCreateSales || isEditLocked"
           />
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <UButton type="submit" color="primary" :disabled="!canCreateSales">
+          <UButton type="submit" color="primary" :disabled="!canCreateSales || isEditLocked">
             {{ t('sales.actions.save') }}
           </UButton>
           <UButton type="button" color="gray" variant="outline" @click="resetForm">
@@ -314,9 +364,10 @@ import { useInventoryStore } from '~/stores/inventory'
 import { useSalesStore } from '~/stores/sales'
 import { useSettingsStore } from '~/stores/settings'
 import { createId } from '~/utils/id'
-import type { SaleAttachment, SaleItem } from '~/types/database'
+import type { Item, SaleAttachment, SaleItem } from '~/types/database'
 import { usePermissions } from '~/composables/usePermissions'
 import { useFlashMessage } from '~/composables/useFlashMessage'
+import { useAuth } from '~/composables/useAuth'
 
 type LineDraft = {
   tempId: string
@@ -325,6 +376,7 @@ type LineDraft = {
   quantity: number
   unit_price: number
   description: string
+  item_query: string
 }
 
 const store = useSalesStore()
@@ -333,13 +385,15 @@ const settingsStore = useSettingsStore()
 const { can, loadPermissions } = usePermissions()
 const { setFlashMessage } = useFlashMessage()
 const router = useRouter()
+const route = useRoute()
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
+const { user } = useAuth()
 
 const saleForm = useState('sales-form', () => ({
   sale_type: 'RETAIL' as const,
-  status: 'OPEN' as const,
-  payment_status: 'UNPAID' as const,
+  status: 'COMPLETED' as const,
+  payment_status: 'PAID' as const,
   payment_method: '',
   receipt_number: '',
   location_id: '',
@@ -367,6 +421,31 @@ const attachmentErrors = ref<string[]>([])
 const formMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const storageKeyForm = 'omega.sales.form'
 const storageKeyLines = 'omega.sales.lines'
+const maxItemMatches = 12
+const activeLineId = ref<string | null>(null)
+
+const editingSaleId = computed(() => (typeof route.query.sale === 'string' ? route.query.sale : ''))
+const isEditing = computed(() => Boolean(editingSaleId.value))
+const editingSale = computed(() => store.sales.find((entry) => entry.sale_id === editingSaleId.value))
+const isAdmin = computed(() => user.value?.role === 'admin')
+const isEditLocked = computed(() => isEditing.value && editingSale.value?.status === 'COMPLETED' && !isAdmin.value)
+const lineItemsLocked = computed(() => isEditLocked.value)
+
+const itemsById = computed(() => new Map(inventoryStore.items.map((entry) => [entry.item_id, entry])))
+
+const itemLabel = (item: Item) => {
+  const base = [item.name, item.model].filter(Boolean).join(' • ')
+  const sku = item.sku ? ` (${item.sku})` : ''
+  return `${base}${sku}`.trim()
+}
+
+const itemSearchText = (item: Item) => {
+  return [item.name, item.model, item.sku, item.vendor_sku, item.barcode].filter(Boolean).join(' ').toLowerCase()
+}
+
+const sortedItems = computed(() => {
+  return [...inventoryStore.items].sort((a, b) => itemLabel(a).localeCompare(itemLabel(b)))
+})
 
 const lineTotal = (line: LineDraft) => line.quantity * line.unit_price
 
@@ -609,7 +688,8 @@ const addLineItem = () => {
     line_type: 'PRODUCT',
     quantity: 1,
     unit_price: 0,
-    description: ''
+    description: '',
+    item_query: ''
   })
 }
 
@@ -628,20 +708,102 @@ const setItemDetails = (line: LineDraft) => {
   line.description = item.name
   line.unit_price = item.price
   line.line_type = item.item_type === 'SPARE_PART' ? 'SPARE_PART' : 'PRODUCT'
+  line.item_query = itemLabel(item)
 }
 
 const lineUnit = (line: LineDraft) => {
   if (!line.item_id) {
     return '-'
   }
-  const item = inventoryStore.items.find((entry) => entry.item_id === line.item_id)
+  const item = itemsById.value.get(line.item_id)
   return item?.unit || '-'
+}
+
+const filteredItems = (line: LineDraft) => {
+  const query = line.item_query?.trim().toLowerCase() ?? ''
+  if (!query) {
+    return sortedItems.value.slice(0, maxItemMatches)
+  }
+  return sortedItems.value.filter((item) => itemSearchText(item).includes(query)).slice(0, maxItemMatches)
+}
+
+const isItemMenuOpen = (line: LineDraft) => activeLineId.value === line.tempId
+
+const openItemMenu = (line: LineDraft) => {
+  activeLineId.value = line.tempId
+}
+
+const closeItemMenu = (line?: LineDraft) => {
+  if (!line || activeLineId.value === line.tempId) {
+    activeLineId.value = null
+  }
+}
+
+const scheduleCloseItemMenu = (line: LineDraft) => {
+  if (!process.client) {
+    return
+  }
+  window.setTimeout(() => {
+    if (activeLineId.value === line.tempId) {
+      activeLineId.value = null
+    }
+  }, 150)
+}
+
+const handleItemInput = (line: LineDraft) => {
+  openItemMenu(line)
+  const query = line.item_query.trim()
+  if (!query) {
+    line.item_id = ''
+    line.description = ''
+    line.line_type = 'PRODUCT'
+    line.unit_price = 0
+    return
+  }
+  const item = line.item_id ? itemsById.value.get(line.item_id) : null
+  if (item && itemLabel(item).toLowerCase() !== query.toLowerCase()) {
+    line.item_id = ''
+    line.description = ''
+    line.line_type = 'PRODUCT'
+    line.unit_price = 0
+  }
+}
+
+const selectItem = (line: LineDraft, item: Item) => {
+  line.item_id = item.item_id
+  line.item_query = itemLabel(item)
+  setItemDetails(line)
+  activeLineId.value = null
+}
+
+const selectFirstMatch = (line: LineDraft) => {
+  if (!line.item_query.trim()) {
+    return
+  }
+  const matches = filteredItems(line)
+  if (matches.length > 0) {
+    selectItem(line, matches[0])
+  }
+}
+
+const syncLineItemQuery = (line: LineDraft) => {
+  if (!line.item_id) {
+    return
+  }
+  const item = itemsById.value.get(line.item_id)
+  if (!item) {
+    return
+  }
+  const label = itemLabel(item)
+  if (!line.item_query || line.item_query.toLowerCase() !== label.toLowerCase()) {
+    line.item_query = label
+  }
 }
 
 const resetForm = () => {
   saleForm.value.sale_type = 'RETAIL'
-  saleForm.value.status = 'OPEN'
-  saleForm.value.payment_status = 'UNPAID'
+  saleForm.value.status = 'COMPLETED'
+  saleForm.value.payment_status = 'PAID'
   saleForm.value.payment_method = ''
   saleForm.value.receipt_number = ''
   saleForm.value.location_id = ''
@@ -661,6 +823,43 @@ const resetForm = () => {
     localStorage.removeItem(storageKeyForm)
     localStorage.removeItem(storageKeyLines)
   }
+}
+
+const loadSaleForEdit = () => {
+  const sale = editingSale.value
+  if (!sale) {
+    return
+  }
+  saleForm.value.sale_type = sale.sale_type
+  saleForm.value.status = sale.status
+  saleForm.value.payment_status = sale.payment_status
+  saleForm.value.payment_method = sale.payment_method ?? ''
+  saleForm.value.receipt_number = sale.receipt_number ?? ''
+  saleForm.value.location_id = sale.location_id
+  saleForm.value.customer_id = sale.customer_id ?? ''
+  saleForm.value.customer_name = sale.customer_name ?? ''
+  saleForm.value.customer_phone = sale.customer_phone ?? ''
+  saleForm.value.customer_tin = sale.customer_tin ?? ''
+  saleForm.value.customer_vat_registration_no = sale.customer_vat_registration_no ?? ''
+  saleForm.value.discount_amount = Number(sale.discount_amount ?? 0)
+  saleForm.value.tax_amount = Number(sale.tax_amount ?? 0)
+  saleForm.value.notes = sale.notes ?? ''
+
+  lineItems.value = store.saleItems
+    .filter((entry) => entry.sale_id === sale.sale_id)
+    .map((entry) => ({
+      tempId: entry.sale_item_id,
+      item_id: entry.item_id ?? '',
+      line_type: entry.line_type,
+      quantity: entry.quantity,
+      unit_price: entry.unit_price,
+      description: entry.description ?? '',
+      item_query: ''
+    }))
+  lineItems.value.forEach(syncLineItemQuery)
+  saleAttachments.value = []
+  attachmentErrors.value = []
+  formMessage.value = null
 }
 
 const handleAttachmentSelect = async (event: Event) => {
@@ -708,6 +907,10 @@ const removeAttachment = (tempId: string) => {
 
 const handleSubmit = async () => {
   formMessage.value = null
+  if (isEditLocked.value) {
+    formMessage.value = { type: 'red', text: t('sales.messages.locked') }
+    return
+  }
   if (!saleForm.value.receipt_number.trim()) {
     formMessage.value = { type: 'red', text: t('sales.messages.receiptRequired') }
     return
@@ -730,7 +933,7 @@ const handleSubmit = async () => {
   }
 
   const normalizedItems: SaleItem[] = lineItems.value.map((line) => ({
-    sale_item_id: '',
+    sale_item_id: line.tempId,
     sale_id: '',
     item_id: line.item_id || null,
     description: line.description || null,
@@ -753,34 +956,45 @@ const handleSubmit = async () => {
       data_url: attachment.data_url
     }))
 
-    await store.createSale(
-      {
-        sale_type: saleForm.value.sale_type,
-        status: saleForm.value.status,
-        payment_status: saleForm.value.payment_status,
-        payment_method: saleForm.value.payment_method,
-        receipt_number: saleForm.value.receipt_number.trim(),
-        customer_id: saleForm.value.customer_id || null,
-        customer_name: saleForm.value.customer_name || null,
-        customer_phone: saleForm.value.customer_phone || null,
-        customer_tin: saleForm.value.customer_tin || null,
-        customer_vat_registration_no: saleForm.value.customer_vat_registration_no || null,
-        ...supplierMeta.value,
-        discount_amount: effectiveDiscount.value,
-        tax_amount: vatAmount.value,
-        subtotal_amount: lineSubtotal.value,
-        total_amount: grandTotal.value,
-        is_repair_service: false,
-        location_id: saleForm.value.location_id,
-        notes: saleForm.value.notes
-      },
-      normalizedItems,
-      attachmentsPayload
-    )
+    const salePayload = {
+      sale_id: isEditing.value ? editingSaleId.value : undefined,
+      sale_type: saleForm.value.sale_type,
+      status: saleForm.value.status,
+      payment_status: saleForm.value.payment_status,
+      payment_method: saleForm.value.payment_method,
+      receipt_number: saleForm.value.receipt_number.trim(),
+      customer_id: saleForm.value.customer_id || null,
+      customer_name: saleForm.value.customer_name || null,
+      customer_phone: saleForm.value.customer_phone || null,
+      customer_tin: saleForm.value.customer_tin || null,
+      customer_vat_registration_no: saleForm.value.customer_vat_registration_no || null,
+      ...supplierMeta.value,
+      discount_amount: effectiveDiscount.value,
+      tax_amount: vatAmount.value,
+      subtotal_amount: lineSubtotal.value,
+      total_amount: grandTotal.value,
+      is_repair_service: false,
+      location_id: saleForm.value.location_id,
+      notes: saleForm.value.notes
+    }
+
+    if (isEditing.value) {
+      await store.updateSale(editingSaleId.value, salePayload, normalizedItems, attachmentsPayload)
+    } else {
+      await store.createSale(salePayload, normalizedItems, attachmentsPayload)
+    }
   } catch (error: any) {
     const statusMessage = error?.data?.statusMessage || error?.message
     if (statusMessage === 'INSUFFICIENT_STOCK') {
       formMessage.value = { type: 'red', text: t('sales.messages.insufficientStock') }
+      return
+    }
+    if (statusMessage === 'SALE_LOCKED') {
+      formMessage.value = { type: 'red', text: t('sales.messages.locked') }
+      return
+    }
+    if (statusMessage === 'LINE_ITEMS_LOCKED') {
+      formMessage.value = { type: 'red', text: t('sales.messages.lineItemsLocked') }
       return
     }
     if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
@@ -798,7 +1012,7 @@ const handleSubmit = async () => {
     throw error
   }
 
-  setFlashMessage({ type: 'primary', text: t('sales.messages.saved') })
+  setFlashMessage({ type: 'primary', text: isEditing.value ? t('sales.messages.updated') : t('sales.messages.saved') })
   resetForm()
   await router.push(localePath('/sales'))
 }
@@ -815,40 +1029,45 @@ onMounted(async () => {
     await store.loadAll()
   }
 
-  if (lineItems.value.length === 0) {
-    addLineItem()
-  }
-
-  if (process.client) {
-    try {
-      const storedForm = localStorage.getItem(storageKeyForm)
-      if (storedForm) {
-        saleForm.value = { ...saleForm.value, ...JSON.parse(storedForm) }
-      }
-      const storedLines = localStorage.getItem(storageKeyLines)
-      if (storedLines) {
-        const parsed = JSON.parse(storedLines)
-        if (Array.isArray(parsed)) {
-          lineItems.value = parsed.map((line) => ({
-            tempId: line.tempId || createId(),
-            item_id: line.item_id || '',
-            line_type: line.line_type || 'PRODUCT',
-            quantity: Number.isFinite(line.quantity) ? line.quantity : 1,
-            unit_price: Number.isFinite(line.unit_price) ? line.unit_price : 0,
-            description: line.description || ''
-          }))
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to restore sales draft', error)
+  if (isEditing.value) {
+    loadSaleForEdit()
+  } else {
+    if (lineItems.value.length === 0) {
+      addLineItem()
     }
+    if (process.client) {
+      try {
+        const storedForm = localStorage.getItem(storageKeyForm)
+        if (storedForm) {
+          saleForm.value = { ...saleForm.value, ...JSON.parse(storedForm) }
+        }
+        const storedLines = localStorage.getItem(storageKeyLines)
+        if (storedLines) {
+          const parsed = JSON.parse(storedLines)
+          if (Array.isArray(parsed)) {
+            lineItems.value = parsed.map((line) => ({
+              tempId: line.tempId || createId(),
+              item_id: line.item_id || '',
+              line_type: line.line_type || 'PRODUCT',
+              quantity: Number.isFinite(line.quantity) ? line.quantity : 1,
+              unit_price: Number.isFinite(line.unit_price) ? line.unit_price : 0,
+              description: line.description || '',
+              item_query: typeof line.item_query === 'string' ? line.item_query : ''
+            }))
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to restore sales draft', error)
+      }
+    }
+    lineItems.value.forEach(syncLineItemQuery)
   }
 })
 
 watch(
   saleForm,
   (value) => {
-    if (!process.client) {
+    if (!process.client || isEditing.value) {
       return
     }
     try {
@@ -863,7 +1082,7 @@ watch(
 watch(
   lineItems,
   (value) => {
-    if (!process.client) {
+    if (!process.client || isEditing.value) {
       return
     }
     try {
@@ -878,6 +1097,12 @@ watch(
 watch(isDiscountEnabled, (enabled) => {
   if (!enabled) {
     saleForm.value.discount_amount = 0
+  }
+})
+
+watch(editingSaleId, (value) => {
+  if (value) {
+    loadSaleForEdit()
   }
 })
 </script>

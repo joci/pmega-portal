@@ -5,9 +5,18 @@
         <h1 class="text-2xl font-semibold text-slate-900">{{ t('sales.detail.title') }}</h1>
         <p class="mt-1 text-sm text-slate-600">{{ t('sales.detail.subtitle') }}</p>
       </div>
-      <NuxtLink :to="localePath('/sales')" class="text-sm font-semibold text-emerald-600 hover:text-emerald-700">
-        {{ t('sales.backToList') }}
-      </NuxtLink>
+      <div class="flex items-center gap-3 text-sm font-semibold">
+        <NuxtLink
+          v-if="canEditSale"
+          :to="localePath({ path: '/sales/new', query: { sale: sale.sale_id } })"
+          class="text-emerald-600 hover:text-emerald-700"
+        >
+          {{ t('sales.list.edit') }}
+        </NuxtLink>
+        <NuxtLink :to="localePath('/sales')" class="text-emerald-600 hover:text-emerald-700">
+          {{ t('sales.backToList') }}
+        </NuxtLink>
+      </div>
     </div>
 
     <div v-if="!canViewSales" class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
@@ -200,16 +209,20 @@ import { computed, onMounted } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useSalesStore } from '~/stores/sales'
 import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
 import type { SaleAttachment, SaleItem, Sale, PaymentMethod } from '~/types/database'
 
 const route = useRoute()
 const inventoryStore = useInventoryStore()
 const salesStore = useSalesStore()
 const { can, loadPermissions } = usePermissions()
+const { user } = useAuth()
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
 
 const canViewSales = computed(() => can('sales.view'))
+const canCreateSales = computed(() => can('sales.create'))
+const isAdmin = computed(() => user.value?.role === 'admin')
 const saleId = computed(() => String(route.params.saleId || ''))
 
 const sale = computed(() => salesStore.sales.find((entry) => entry.sale_id === saleId.value))
@@ -217,6 +230,13 @@ const saleLines = computed(() => salesStore.saleItems.filter((line) => line.sale
 const saleAttachments = computed<SaleAttachment[]>(() =>
   salesStore.attachments.filter((attachment) => attachment.sale_id === saleId.value)
 )
+
+const canEditSale = computed(() => {
+  if (!sale.value || !canCreateSales.value) {
+    return false
+  }
+  return sale.value.status !== 'COMPLETED' || isAdmin.value
+})
 
 const subtotal = computed(() => {
   if (sale.value?.subtotal_amount != null) {

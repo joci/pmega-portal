@@ -3,9 +3,11 @@ import { getPrismaClient } from '~/server/utils/prisma'
 import { mapItem } from '~/server/utils/mappers'
 import { generateSku } from '~/server/utils/sku'
 import { toNumber } from '~/server/utils/serialize'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   const costSheetEntryId = typeof body?.cost_sheet_entry_id === 'string' ? body.cost_sheet_entry_id.trim() : ''
@@ -115,6 +117,7 @@ export default defineEventHandler(async (event) => {
       cost_sheet_total_with_vat: costSheetTotalWithVat > 0 ? costSheetTotalWithVat : null,
       cost_sheet_vat_rate: shouldStoreCostSheetVatRate ? normalizedVatRate : null,
       cost_sheet_entry_id: costSheetEntryId || null,
+      created_by: user.user_id,
       sync_status: 'SYNCED'
     }
   })

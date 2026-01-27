@@ -1,6 +1,7 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapSale, mapSaleAttachment, mapSaleItem } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 type SalePayload = {
   sale: Record<string, unknown>
@@ -10,6 +11,7 @@ type SalePayload = {
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = (await readBody(event)) as SalePayload
 
   if (!body?.sale || !Array.isArray(body.items)) {
@@ -27,6 +29,10 @@ export default defineEventHandler(async (event) => {
   const saleDate = saleData.sale_date ? new Date(String(saleData.sale_date)) : new Date()
   const receiptNumber = saleData.receipt_number ? String(saleData.receipt_number).trim() : ''
   const paymentMethod = saleData.payment_method ? String(saleData.payment_method) : ''
+  const performedBy =
+    typeof saleData.performed_by === 'string' && saleData.performed_by.trim()
+      ? String(saleData.performed_by).trim()
+      : user.name || user.username
 
   if (!receiptNumber) {
     throw createError({ statusCode: 400, statusMessage: 'RECEIPT_NUMBER_REQUIRED' })
@@ -173,10 +179,11 @@ export default defineEventHandler(async (event) => {
         total_amount: total,
         is_repair_service: saleData.is_repair_service ? Boolean(saleData.is_repair_service) : null,
         repair_service_id: saleData.repair_service_id ? String(saleData.repair_service_id) : null,
-        performed_by: saleData.performed_by ? String(saleData.performed_by) : null,
+        performed_by: performedBy || null,
         shipping_address_id: saleData.shipping_address_id ? String(saleData.shipping_address_id) : null,
         notes: saleData.notes ? String(saleData.notes) : null,
         location_id: String(saleData.location_id),
+        created_by: user.user_id,
         sync_status: 'SYNCED'
       }
     })
@@ -185,6 +192,7 @@ export default defineEventHandler(async (event) => {
       await tx.saleItem.createMany({
         data: normalizedItems.map((entry) => ({
           ...entry,
+          created_by: user.user_id,
           sync_status: 'SYNCED'
         }))
       })
@@ -221,6 +229,7 @@ export default defineEventHandler(async (event) => {
           file_type: entry.file_type,
           file_size: entry.file_size,
           data_url: entry.data_url,
+          created_by: user.user_id,
           sync_status: 'SYNCED'
         }))
       })
@@ -291,6 +300,7 @@ export default defineEventHandler(async (event) => {
             unit_cost: unitCost,
             unit_price: unitPrice,
             created_at: saleDate,
+            created_by: user.user_id,
             sync_status: 'SYNCED'
           }
         })

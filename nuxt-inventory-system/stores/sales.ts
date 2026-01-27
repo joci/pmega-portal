@@ -100,6 +100,52 @@ export const useSalesStore = defineStore('sales', () => {
     }
   }
 
+  const updateSale = async (
+    saleId: string,
+    payload: SaleInput,
+    items: SaleItem[],
+    attachmentsPayload: SaleAttachment[] = []
+  ) => {
+    const db = getDb()
+    try {
+      const response = await $fetch<{ sale: Sale; items: SaleItem[]; attachments: SaleAttachment[] }>(
+        `/api/sales/${saleId}`,
+        {
+          method: 'PUT',
+          body: { sale: payload, items, attachments: attachmentsPayload }
+        }
+      )
+
+      sales.value = sales.value.map((entry) => (entry.sale_id === response.sale.sale_id ? response.sale : entry))
+      saleItems.value = [
+        ...saleItems.value.filter((entry) => entry.sale_id !== response.sale.sale_id),
+        ...response.items
+      ]
+      attachments.value = [
+        ...attachments.value.filter((entry) => entry.sale_id !== response.sale.sale_id),
+        ...response.attachments
+      ]
+
+      await db.sales.put(response.sale)
+      await db.saleItems.where('sale_id').equals(response.sale.sale_id).delete()
+      if (response.items.length > 0) {
+        await db.saleItems.bulkPut(response.items)
+      }
+      await db.saleAttachments.where('sale_id').equals(response.sale.sale_id).delete()
+      if (response.attachments.length > 0) {
+        await db.saleAttachments.bulkPut(response.attachments)
+      }
+    } catch (error) {
+      if (error instanceof FetchError && error.data?.statusMessage === 'SALE_LOCKED') {
+        throw new Error('SALE_LOCKED')
+      }
+      if (error instanceof FetchError && error.data?.statusMessage === 'LINE_ITEMS_LOCKED') {
+        throw new Error('LINE_ITEMS_LOCKED')
+      }
+      throw error
+    }
+  }
+
   return {
     sales,
     saleItems,
@@ -107,6 +153,7 @@ export const useSalesStore = defineStore('sales', () => {
     attachments,
     isLoaded,
     loadAll,
-    createSale
+    createSale,
+    updateSale
   }
 })

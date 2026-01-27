@@ -1,9 +1,10 @@
 import { getPrismaClient } from '~/server/utils/prisma'
 import { getRolePermissions } from '~/utils/permissions'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const role = String(config.appRole || 'viewer').toLowerCase()
+  const user = await requireAuthUser(event)
+  const role = String(user.role || 'viewer').toLowerCase()
   const permissions = getRolePermissions(role)
   if (!permissions.includes('inventory.locations.manage')) {
     throw createError({ statusCode: 403, statusMessage: 'FORBIDDEN' })

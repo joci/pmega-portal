@@ -1,5 +1,6 @@
 import { getPrismaClient } from '~/server/utils/prisma'
 import { getRolePermissions } from '~/utils/permissions'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
@@ -8,8 +9,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'ITEM_ID_REQUIRED' })
   }
 
-  const config = useRuntimeConfig()
-  const role = String(config.appRole || 'viewer').toLowerCase()
+  const user = await requireAuthUser(event)
+  const role = String(user.role || 'viewer').toLowerCase()
   const permissions = getRolePermissions(role)
 
   const item = await prisma.item.findUnique({

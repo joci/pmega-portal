@@ -10,6 +10,8 @@
     "partRequests": "የመለዋወጫ ጥያቄዎች",
     "reports": "ሪፖርቶች",
     "settings": "ቅንብሮች",
+    "users": "ተጠቃሚዎች",
+    "account": "መለያ",
     "menuOpen": "ሜኑ",
     "menuClose": "ዝጋ"
   },
@@ -120,6 +122,10 @@
       "badges": {
         "added": "ተጨመረ",
         "pending": "አልተጨመረም"
+      },
+      "messages": {
+        "created": "የወጪ ሉህ መዝገብ ተፈጥሯል።",
+        "updated": "የወጪ ሉህ መዝገብ ተዘምኗል።"
       },
       "validation": {
         "dateRequired": "ቀን አስፈላጊ ነው።",
@@ -417,10 +423,12 @@
       "location": "ቦታ",
       "total": "ድምር",
       "actions": "እርምጃዎች",
-      "view": "አሳይ"
+      "view": "አሳይ",
+      "edit": "አዘምን"
     },
     "form": {
       "title": "ሽያጭ ፍጠር",
+      "editTitle": "ሽያጭ አዘምን",
       "addLine": "መስመር ጨምር",
       "linesTitle": "የእቃ መስመሮች",
       "noLines": "ሽያጭ ለማስቀመጥ ቢያንስ አንድ መስመር ያክሉ።"
@@ -467,6 +475,7 @@
       "paymentCheck": "ቼክ",
       "selectLocation": "ቦታ ይምረጡ",
       "selectItem": "እቃ ይምረጡ",
+      "noItemMatches": "ተዛማጅ እቃ አልተገኘም።",
       "product": "ምርት",
       "sparePart": "መለዋወጫ",
       "labor": "ሥራ ክፍያ",
@@ -488,6 +497,9 @@
       "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
       "lineRequired": "ቢያንስ አንድ መስመር ያክሉ።",
       "saved": "ሽያጭ ተቀምጧል።",
+      "updated": "ሽያጭ ተዘምኗል።",
+      "locked": "ተጠናቀቁ ሽያጮችን አስተዳዳሪ ብቻ ማዘምን ይችላል።",
+      "lineItemsLocked": "ያሉ ሽያጮች መስመሮች ተቆልፈዋል።",
       "insufficientStock": "ለአንዳንድ እቃዎች በቂ እቃ የለም።",
       "discountNotAllowed": "ቅናሽ በቅንብሮች ውስጥ ተሰናክሏል።",
       "attachmentTooLarge": "\"{name}\" ከ 5MB በላይ ነው።"
@@ -624,6 +636,7 @@
       },
       "part": "መለዋወጫ",
       "selectPart": "መለዋወጫ ይምረጡ",
+      "noPartMatches": "ተዛማጅ መለዋወጫ አልተገኘም።",
       "externalItemName": "የውጭ እቃ ስም",
       "externalModel": "የውጭ ሞዴል",
       "receiptNumber": "የደረሰኝ ቁጥር",
@@ -711,6 +724,87 @@
       "deleteDescription": "\"{name}\"ን ከቲኬቱ ላይ ማስወገድ?",
       "deleteConfirm": "አጥፋ",
       "deleteCancel": "ተመለስ"
+    }
+  },
+  "auth": {
+    "title": "ይግቡ",
+    "subtitle": "በተጠቃሚ ስም ወይም ኢሜይል ይግቡ።",
+    "bootstrapSubtitle": "መጀመሪያውን አስተዳዳሪ ተጠቃሚ ያቋቁሙ።",
+    "fields": {
+      "identifier": "ተጠቃሚ ስም ወይም ኢሜይል",
+      "email": "ኢሜይል",
+      "username": "ተጠቃሚ ስም",
+      "name": "ሙሉ ስም",
+      "password": "የይለፍ ቃል",
+      "confirmPassword": "የይለፍ ቃል ያረጋግጡ"
+    },
+    "actions": {
+      "login": "ግባ",
+      "bootstrap": "አስተዳዳሪ ፍጠር",
+      "logout": "ውጣ"
+    },
+    "messages": {
+      "loginFailed": "መግቢያ አልተሳካም። መረጃዎትን ያረጋግጡ።",
+      "passwordMismatch": "የይለፍ ቃላት አይዛመዱም።"
+    }
+  },
+  "account": {
+    "title": "መለያ",
+    "subtitle": "የይለፍ ቃልዎን ያዘምኑ።",
+    "fields": {
+      "currentPassword": "የአሁኑ የይለፍ ቃል",
+      "newPassword": "አዲስ የይለፍ ቃል",
+      "confirmPassword": "አዲስ የይለፍ ቃል ያረጋግጡ"
+    },
+    "actions": {
+      "updatePassword": "የይለፍ ቃል አዘምን"
+    },
+    "messages": {
+      "passwordMismatch": "የይለፍ ቃላት አይዛመዱም።",
+      "currentInvalid": "የአሁኑ የይለፍ ቃል ትክክል አይደለም።",
+      "updated": "የይለፍ ቃል ተዘምኗል።",
+      "updateFailed": "የይለፍ ቃል ማዘምን አልተሳካም።"
+    }
+  },
+  "users": {
+    "title": "የተጠቃሚ አስተዳደር",
+    "subtitle": "ተጠቃሚዎችን ይፍጠሩ እና ሚና ይመድቡ።",
+    "createTitle": "ተጠቃሚ መመዝገብ",
+    "listTitle": "ሁሉም ተጠቃሚዎች",
+    "empty": "ተጠቃሚዎች አልተገኙም።",
+    "fields": {
+      "name": "ስም",
+      "email": "ኢሜይል",
+      "username": "ተጠቃሚ ስም",
+      "role": "ሚና",
+      "status": "ሁኔታ",
+      "password": "የይለፍ ቃል"
+    },
+    "status": {
+      "active": "ንቁ",
+      "disabled": "ዝም ያለ"
+    },
+    "actions": {
+      "create": "ተጠቃሚ ፍጠር",
+      "update": "አዘምን",
+      "resetPassword": "የይለፍ ቃል ዳግም አስጀምር",
+      "actions": "እርምጃዎች"
+    },
+    "reset": {
+      "title": "የይለፍ ቃል ዳግም አስጀምር",
+      "subtitle": "የይለፍ ቃል ዳግም አስጀምር ለ",
+      "newPassword": "አዲስ የይለፍ ቃል",
+      "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
+      "submit": "የይለፍ ቃል ዳግም አስጀምር",
+      "cancel": "ሰርዝ",
+      "passwordRequired": "የይለፍ ቃል ያስፈልጋል።",
+      "passwordMismatch": "የይለፍ ቃላት አይዛመዱም።"
+    },
+    "messages": {
+      "createFailed": "ተጠቃሚ ማፍጠር አልተሳካም።",
+      "updateFailed": "ተጠቃሚ ማዘምን አልተሳካም።",
+      "resetSuccess": "የይለፍ ቃል ተቀይሯል።",
+      "resetFailed": "የይለፍ ቃል ማደስ አልተሳካም።"
     }
   },
   "reports": {

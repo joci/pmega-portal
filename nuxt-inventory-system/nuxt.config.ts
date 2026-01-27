@@ -8,6 +8,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     appEnv: process.env.APP_ENV || process.env.NODE_ENV || 'local',
     appRole: process.env.APP_ROLE || 'admin',
+    authCookieName: process.env.AUTH_COOKIE_NAME || 'omega_session',
+    authSessionDays: Number(process.env.AUTH_SESSION_DAYS || 7),
     db: {
       profiles: {
         local: {

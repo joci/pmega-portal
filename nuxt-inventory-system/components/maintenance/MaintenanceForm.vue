@@ -487,15 +487,38 @@
                 <label class="text-xs font-semibold uppercase text-slate-500">{{
                   t('maintenance.partRequest.part')
                 }}</label>
-                <select
-                  v-model="partRequestForm.part_id"
-                  class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="">{{ t('maintenance.partRequest.selectPart') }}</option>
-                  <option v-for="item in inventoryStore.items" :key="item.item_id" :value="item.item_id">
-                    {{ item.name }}
-                  </option>
-                </select>
+                <div class="relative mt-1">
+                  <input
+                    v-model="partRequestForm.part_query"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    :placeholder="t('maintenance.partRequest.selectPart')"
+                    @focus="openPartMenu"
+                    @input="handlePartInput"
+                    @keydown.enter.prevent="selectFirstPartMatch"
+                    @keydown.escape="closePartMenu"
+                    @blur="scheduleClosePartMenu"
+                  />
+                  <div
+                    v-if="isPartMenuOpen"
+                    class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                  >
+                    <div v-if="filteredParts.length === 0" class="px-3 py-2 text-xs text-slate-500">
+                      {{ t('maintenance.partRequest.noPartMatches') }}
+                    </div>
+                    <div v-else class="max-h-64 overflow-auto">
+                      <button
+                        v-for="item in filteredParts"
+                        :key="item.item_id"
+                        type="button"
+                        class="flex w-full flex-col gap-1 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        @mousedown.prevent="selectPart(item)"
+                      >
+                        <span class="font-semibold text-slate-900">{{ partLabel(item) }}</span>
+                        <span class="text-xs text-slate-500">{{ formatCurrency(Number(item.price ?? 0)) }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="grid gap-4 md:grid-cols-3">
                 <div>
@@ -754,12 +777,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useMaintenanceStore } from '~/stores/maintenance'
 import { useSettingsStore } from '~/stores/settings'
 import { usePermissions } from '~/composables/usePermissions'
-import type { MaintenanceAttachment, MaintenanceTicket, PartRequest } from '~/types/database'
+import type { Item, MaintenanceAttachment, MaintenanceTicket, PartRequest } from '~/types/database'
 import { useFlashMessage } from '~/composables/useFlashMessage'
 import { createId } from '~/utils/id'
 
@@ -829,6 +852,7 @@ const editingCustomerId = ref<string | null>(null)
 const editingDeviceId = ref<string | null>(null)
 const partRequestForm = reactive({
   part_id: '',
+  part_query: '',
   quantity_requested: 1,
   requested_by: '',
   source_preference: 'STORE_INVENTORY' as const,
@@ -847,6 +871,8 @@ const partRequestMode = ref<'internal' | 'external'>('internal')
 const partRequestMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const partRequestNotice = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const isPartRequestModalOpen = ref(false)
+const isPartMenuOpen = ref(false)
+const maxPartMatches = 12
 
 const prefillTicketId = computed(() => (typeof route.query.ticket === 'string' ? route.query.ticket : ''))
 const ticketPartRequests = computed(() =>
@@ -857,6 +883,7 @@ const ticketPartRequests = computed(() =>
 const ticketExistingAttachments = computed(() =>
   editingTicketId.value ? store.attachments.filter((entry) => entry.ticket_id === editingTicketId.value) : []
 )
+const itemsById = computed(() => new Map(inventoryStore.items.map((entry) => [entry.item_id, entry])))
 
 const partName = (request: PartRequest) => {
   if (request.part_id) {
@@ -877,7 +904,7 @@ const selectedPartUnitAmount = computed(() => {
   if (!partRequestForm.part_id) {
     return null
   }
-  const item = inventoryStore.items.find((entry) => entry.item_id === partRequestForm.part_id)
+  const item = itemsById.value.get(partRequestForm.part_id)
   if (!item || item.price == null) {
     return null
   }
@@ -899,6 +926,28 @@ const externalLineTotal = computed(() => {
     return '-'
   }
   return formatCurrency(partRequestForm.external_cost * partRequestForm.quantity_requested)
+})
+
+const partLabel = (item: Item) => {
+  const base = [item.name, item.model].filter(Boolean).join(' • ')
+  const sku = item.sku ? ` (${item.sku})` : ''
+  return `${base}${sku}`.trim()
+}
+
+const partSearchText = (item: Item) => {
+  return [item.name, item.model, item.sku, item.vendor_sku, item.barcode].filter(Boolean).join(' ').toLowerCase()
+}
+
+const sortedParts = computed(() => {
+  return [...inventoryStore.items].sort((a, b) => partLabel(a).localeCompare(partLabel(b)))
+})
+
+const filteredParts = computed(() => {
+  const query = partRequestForm.part_query.trim().toLowerCase()
+  if (!query) {
+    return sortedParts.value.slice(0, maxPartMatches)
+  }
+  return sortedParts.value.filter((item) => partSearchText(item).includes(query)).slice(0, maxPartMatches)
 })
 
 const unitAmount = (request: PartRequest) => {
@@ -1007,6 +1056,7 @@ const resetForm = async () => {
 
 const resetPartRequestForm = () => {
   partRequestForm.part_id = ''
+  partRequestForm.part_query = ''
   partRequestForm.quantity_requested = 1
   partRequestForm.requested_by = ''
   partRequestForm.technician_id = ticketForm.technician_id || ''
@@ -1023,6 +1073,7 @@ const resetPartRequestForm = () => {
   partRequestForm.external_receipt_file_size = 0
   partRequestMode.value = 'internal'
   partRequestMessage.value = null
+  isPartMenuOpen.value = false
 }
 
 const openPartRequestModal = () => {
@@ -1146,6 +1197,65 @@ const formatDate = (value?: string | null) => {
   return new Date(value).toLocaleDateString(locale.value)
 }
 
+const openPartMenu = () => {
+  isPartMenuOpen.value = true
+}
+
+const closePartMenu = () => {
+  isPartMenuOpen.value = false
+}
+
+const scheduleClosePartMenu = () => {
+  if (!process.client) {
+    return
+  }
+  window.setTimeout(() => {
+    isPartMenuOpen.value = false
+  }, 150)
+}
+
+const handlePartInput = () => {
+  openPartMenu()
+  const query = partRequestForm.part_query.trim()
+  if (!query) {
+    partRequestForm.part_id = ''
+    return
+  }
+  const item = partRequestForm.part_id ? itemsById.value.get(partRequestForm.part_id) : null
+  if (item && partLabel(item).toLowerCase() !== query.toLowerCase()) {
+    partRequestForm.part_id = ''
+  }
+}
+
+const selectPart = (item: Item) => {
+  partRequestForm.part_id = item.item_id
+  partRequestForm.part_query = partLabel(item)
+  isPartMenuOpen.value = false
+}
+
+const selectFirstPartMatch = () => {
+  if (!partRequestForm.part_query.trim()) {
+    return
+  }
+  if (filteredParts.value.length > 0) {
+    selectPart(filteredParts.value[0])
+  }
+}
+
+const syncPartQuery = () => {
+  if (!partRequestForm.part_id) {
+    return
+  }
+  const item = itemsById.value.get(partRequestForm.part_id)
+  if (!item) {
+    return
+  }
+  const label = partLabel(item)
+  if (!partRequestForm.part_query || partRequestForm.part_query.toLowerCase() !== label.toLowerCase()) {
+    partRequestForm.part_query = label
+  }
+}
+
 const handleSubmit = async () => {
   formMessage.value = null
   if (!canEditMaintenance.value) {
@@ -1181,100 +1291,134 @@ const handleSubmit = async () => {
     return
   }
 
-  let customerId = editingCustomerId.value
-  let deviceId = editingDeviceId.value
+  const wasEditing = Boolean(editingTicketId.value)
 
-  if (editingTicketId.value && customerId && deviceId) {
-    await store.updateCustomer({
+  try {
+    let customerId = editingCustomerId.value
+    let deviceId = editingDeviceId.value
+
+    if (editingTicketId.value && customerId && deviceId) {
+      await store.updateCustomer({
+        customer_id: customerId,
+        name: customerForm.name,
+        name_amharic: customerForm.name_amharic || null,
+        phone: customerForm.phone || null,
+        email: customerForm.email || null,
+        tin: customerForm.tin || null,
+        vat_registration_no: customerForm.vat_registration_no || null,
+        address_id: null,
+        customer_type: 'MAINTENANCE'
+      })
+      await store.updateCustomerDevice({
+        device_id: deviceId,
+        customer_id: customerId,
+        catalog_item_id: null,
+        item_name: deviceForm.item_name || null,
+        brand: deviceForm.brand || null,
+        model: deviceForm.model || null,
+        serial_number: deviceForm.serial_number || null,
+        purchase_date: null,
+        warranty_expiry: null,
+        notes: null
+      })
+    } else {
+      customerId = await store.createCustomer({
+        name: customerForm.name,
+        name_amharic: customerForm.name_amharic || null,
+        phone: customerForm.phone || null,
+        email: customerForm.email || null,
+        tin: customerForm.tin || null,
+        vat_registration_no: customerForm.vat_registration_no || null,
+        customer_type: 'MAINTENANCE'
+      })
+
+      deviceId = await store.createCustomerDevice({
+        customer_id: customerId,
+        item_name: deviceForm.item_name || null,
+        brand: deviceForm.brand || null,
+        model: deviceForm.model,
+        serial_number: deviceForm.serial_number || null
+      })
+    }
+
+    const ticketPayload = {
+      ticket_id: editingTicketId.value || undefined,
+      ticket_number: null,
+      receipt_number: ticketForm.receipt_number,
+      receipt_attachment: ticketForm.receipt_attachment || null,
       customer_id: customerId,
-      name: customerForm.name,
-      name_amharic: customerForm.name_amharic || null,
-      phone: customerForm.phone || null,
-      email: customerForm.email || null,
-      tin: customerForm.tin || null,
-      vat_registration_no: customerForm.vat_registration_no || null,
-      address_id: null,
-      customer_type: 'MAINTENANCE'
-    })
-    await store.updateCustomerDevice({
-      device_id: deviceId,
-      customer_id: customerId,
-      catalog_item_id: null,
-      item_name: deviceForm.item_name || null,
-      brand: deviceForm.brand || null,
-      model: deviceForm.model || null,
-      serial_number: deviceForm.serial_number || null,
-      purchase_date: null,
-      warranty_expiry: null,
-      notes: null
-    })
-  } else {
-    customerId = await store.createCustomer({
-      name: customerForm.name,
-      name_amharic: customerForm.name_amharic || null,
-      phone: customerForm.phone || null,
-      email: customerForm.email || null,
-      tin: customerForm.tin || null,
-      vat_registration_no: customerForm.vat_registration_no || null,
-      customer_type: 'MAINTENANCE'
-    })
+      customer_device_id: deviceId,
+      technician_id: ticketForm.technician_id || null,
+      status: ticketForm.status,
+      problem_description: ticketForm.problem_description,
+      diagnosis: null,
+      estimated_cost: null,
+      estimated_completion: null,
+      repair_cost: null,
+      labor_cost: laborCostValue.value,
+      labor_hours: null,
+      total_cost: totalWithVat.value,
+      payment_status: 'PENDING',
+      priority: ticketForm.priority,
+      warranty_status: ticketForm.warranty_status,
+      received_at: ticketForm.received_at,
+      target_delivery_at: ticketForm.target_delivery_at || null,
+      delivered_at: ticketForm.delivered_at || null,
+      location_id: ticketForm.location_id
+    }
 
-    deviceId = await store.createCustomerDevice({
-      customer_id: customerId,
-      item_name: deviceForm.item_name || null,
-      brand: deviceForm.brand || null,
-      model: deviceForm.model,
-      serial_number: deviceForm.serial_number || null
-    })
+    const attachmentsPayload: MaintenanceAttachment[] = ticketAttachments.value.map((attachment) => ({
+      attachment_id: '',
+      ticket_id: editingTicketId.value || '',
+      file_name: attachment.file_name,
+      file_type: attachment.file_type,
+      file_size: attachment.file_size,
+      data_url: attachment.data_url
+    }))
+
+    if (editingTicketId.value) {
+      await store.updateTicket(
+        {
+          ...ticketPayload,
+          ticket_id: editingTicketId.value
+        },
+        attachmentsPayload
+      )
+    } else {
+      await store.createTicket(ticketPayload, attachmentsPayload)
+    }
+
+    const message = wasEditing ? t('maintenance.messages.updated') : t('maintenance.messages.saved')
+    setFlashMessage({ type: 'primary', text: message })
+    await router.push(localePath('/maintenance'))
+  } catch (error: any) {
+    const statusMessage = error?.data?.statusMessage || error?.response?.statusMessage
+    if (statusMessage === 'ATTACHMENT_TOO_LARGE') {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.attachmentTooLarge', { name: '' }) }
+      return
+    }
+    if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.receiptRequired') }
+      return
+    }
+    if (statusMessage === 'RECEIVED_DATE_REQUIRED') {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.receivedDateRequired') }
+      return
+    }
+    if (statusMessage === 'DELIVERED_DATE_REQUIRED') {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.deliveredDateRequired') }
+      return
+    }
+    if (statusMessage === 'CUSTOMER_ID_REQUIRED') {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.customerRequired') }
+      return
+    }
+    formMessage.value = {
+      type: 'red',
+      text: wasEditing ? t('maintenance.messages.updateFailed') : t('maintenance.messages.saveFailed')
+    }
+    console.error('Failed to save maintenance ticket', error)
   }
-
-  const ticketPayload = {
-    ticket_id: editingTicketId.value || undefined,
-    ticket_number: null,
-    receipt_number: ticketForm.receipt_number,
-    receipt_attachment: ticketForm.receipt_attachment || null,
-    customer_id: customerId,
-    customer_device_id: deviceId,
-    technician_id: ticketForm.technician_id || null,
-    status: ticketForm.status,
-    problem_description: ticketForm.problem_description,
-    diagnosis: null,
-    estimated_cost: null,
-    estimated_completion: null,
-    repair_cost: null,
-    labor_cost: laborCostValue.value,
-    labor_hours: null,
-    total_cost: totalWithVat.value,
-    payment_status: 'PENDING',
-    priority: ticketForm.priority,
-    warranty_status: ticketForm.warranty_status,
-    received_at: ticketForm.received_at,
-    target_delivery_at: ticketForm.target_delivery_at || null,
-    delivered_at: ticketForm.delivered_at || null,
-    location_id: ticketForm.location_id
-  }
-
-  const attachmentsPayload: MaintenanceAttachment[] = ticketAttachments.value.map((attachment) => ({
-    attachment_id: '',
-    ticket_id: editingTicketId.value || '',
-    file_name: attachment.file_name,
-    file_type: attachment.file_type,
-    file_size: attachment.file_size,
-    data_url: attachment.data_url
-  }))
-
-  if (editingTicketId.value) {
-    await store.updateTicket({
-      ...ticketPayload,
-      ticket_id: editingTicketId.value
-    }, attachmentsPayload)
-  } else {
-    await store.createTicket(ticketPayload, attachmentsPayload)
-  }
-
-  const message = editingTicketId.value ? t('maintenance.messages.updated') : t('maintenance.messages.saved')
-  setFlashMessage({ type: 'primary', text: message })
-  await router.push(localePath('/maintenance'))
 }
 
 const formatDateInput = (value?: string | null) => {
@@ -1430,5 +1574,13 @@ onMounted(async () => {
       startEdit(ticket)
     }
   }
+  syncPartQuery()
 })
+
+watch(
+  () => partRequestForm.part_id,
+  () => {
+    syncPartQuery()
+  }
+)
 </script>

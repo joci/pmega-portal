@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapCostSheetEntry } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   const itemName = typeof body?.item_name === 'string' ? body.item_name.trim() : ''
@@ -45,6 +47,7 @@ export default defineEventHandler(async (event) => {
       total_with_vat: totalWithVat,
       vat_rate: normalizedVatRate,
       entry_date: entryDate,
+      created_by: user.user_id,
       sync_status: 'SYNCED'
     },
     include: { item: true }

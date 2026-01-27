@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapInventoryBatch, mapInventory, mapInventoryMovement, mapItem } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
 
   if (!body?.item_id || !body?.location_id) {
@@ -29,6 +31,7 @@ export default defineEventHandler(async (event) => {
         quantity_remaining: quantityReceived,
         unit_cost: body.unit_cost ?? 0,
         reference: body.reference ?? null,
+        created_by: user.user_id,
         sync_status: 'SYNCED'
       }
     })
@@ -46,6 +49,7 @@ export default defineEventHandler(async (event) => {
         cost: body.unit_cost ?? item.cost,
         price: Number.isFinite(nextPrice) ? nextPrice : item.price,
         price_updated_at: priceUpdatedAt,
+        updated_by: user.user_id,
         sync_status: 'SYNCED'
       }
     })
@@ -56,6 +60,7 @@ export default defineEventHandler(async (event) => {
       },
       update: {
         quantity: { increment: quantityReceived },
+        updated_by: user.user_id,
         sync_status: 'SYNCED'
       },
       create: {
@@ -64,6 +69,7 @@ export default defineEventHandler(async (event) => {
         location_id: body.location_id,
         quantity: quantityReceived,
         reserved_quantity: 0,
+        created_by: user.user_id,
         sync_status: 'SYNCED'
       }
     })
@@ -78,6 +84,7 @@ export default defineEventHandler(async (event) => {
         reference_id: body.reference ?? batch.batch_id,
         unit_cost: body.unit_cost ?? 0,
         created_at: receivedAt,
+        created_by: user.user_id,
         sync_status: 'SYNCED'
       }
     })

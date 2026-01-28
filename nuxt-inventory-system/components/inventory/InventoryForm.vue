@@ -45,7 +45,9 @@
               {{ t('inventory.fields.lastReceipt') }}:
               {{ formatDate(latestReceipt.received_at) }} •
               {{ t('inventory.fields.quantityReceived') }} {{ latestReceipt.quantity_received }} •
-              {{ t('inventory.fields.unitCost') }} {{ formatCurrency(latestReceipt.unit_cost) }} •
+              <template v-if="canViewCost">
+                {{ t('inventory.fields.unitCost') }} {{ formatCurrency(latestReceipt.unit_cost) }} •
+              </template>
               {{ t('inventory.fields.receivedLocation') }} {{ locationName(latestReceipt.location_id) }}
             </div>
             <div v-else class="mt-1 text-xs text-slate-500">
@@ -190,7 +192,7 @@
                   class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 />
               </div>
-              <div>
+              <div v-if="canViewCost">
                 <label class="text-xs font-semibold uppercase text-slate-500">
                   {{ t('inventory.fields.unitCost') }}
                 </label>
@@ -200,6 +202,25 @@
                   min="0"
                   step="0.01"
                   class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <div v-else>
+                <label class="text-xs font-semibold uppercase text-slate-500">
+                  {{ t('inventory.fields.unitCost') }}
+                </label>
+                <div class="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-400">
+                  {{ t('permissions.restricted') }}
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-semibold uppercase text-slate-500">
+                  {{ t('inventory.fields.employeeName') }}
+                </label>
+                <input
+                  v-model="receiptForm.employee_name"
+                  class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  :disabled="!isAdmin"
+                  required
                 />
               </div>
             </div>
@@ -231,6 +252,17 @@
               <input
                 v-model="form.serial_number"
                 class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-semibold uppercase text-slate-500">
+                {{ t('inventory.fields.employeeName') }}
+              </label>
+              <input
+                v-model="form.employee_name"
+                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                :disabled="!isAdmin"
+                required
               />
             </div>
           </div>
@@ -517,7 +549,7 @@
                   :disabled="isCostSheetLocked"
                 />
               </div>
-              <div>
+              <div v-if="canViewCost">
                 <label class="text-xs font-semibold uppercase text-slate-500">
                   {{ t('inventory.costSheet.unitCost') }}
                 </label>
@@ -530,12 +562,28 @@
                   :disabled="isCostSheetLocked"
                 />
               </div>
-              <div>
+              <div v-else>
+                <label class="text-xs font-semibold uppercase text-slate-500">
+                  {{ t('inventory.costSheet.unitCost') }}
+                </label>
+                <div class="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-400">
+                  {{ t('permissions.restricted') }}
+                </div>
+              </div>
+              <div v-if="canViewCost">
                 <label class="text-xs font-semibold uppercase text-slate-500">
                   {{ t('inventory.costSheet.totalWithVat') }}
                 </label>
                 <div class="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
                   {{ formatCurrency(costSheetTotalWithVat) }}
+                </div>
+              </div>
+              <div v-else>
+                <label class="text-xs font-semibold uppercase text-slate-500">
+                  {{ t('inventory.costSheet.totalWithVat') }}
+                </label>
+                <div class="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-400">
+                  {{ t('permissions.restricted') }}
                 </div>
               </div>
             </div>
@@ -921,6 +969,7 @@ import { useInventoryStore, type CategoryInput, type ItemInput } from '~/stores/
 import { useSettingsStore } from '~/stores/settings'
 import { usePermissions } from '~/composables/usePermissions'
 import { useFlashMessage } from '~/composables/useFlashMessage'
+import { useAuth } from '~/composables/useAuth'
 import type { CostSheetEntry, Item, ItemAttachment } from '~/types/database'
 import { createId } from '~/utils/id'
 
@@ -942,6 +991,7 @@ const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const { user } = useAuth()
 
 const showList = computed(() => props.showList)
 const isEdit = computed(() => Boolean(props.itemId))
@@ -957,6 +1007,8 @@ const canViewCost = computed(() => can('inventory.field.cost.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
 const canManageLocations = computed(() => can('inventory.locations.manage'))
 const canRemoveCostSheetItems = computed(() => can('inventory.cost_sheet.remove'))
+const isAdmin = computed(() => user.value?.role === 'admin')
+const defaultEmployeeName = computed(() => user.value?.name || user.value?.username || user.value?.email || '')
 
 const defaultMarginPercent = ref(40)
 const vatRate = computed(() => {
@@ -1002,6 +1054,7 @@ const defaultForm = (): ItemInput => ({
   manufacturer: '',
   warranty_period: null,
   unit: '',
+  employee_name: defaultEmployeeName.value,
   pricing_mode: 'COST_SHEET',
   margin_percent: defaultMarginPercent.value,
   price_override_reason: '',
@@ -1044,10 +1097,24 @@ const receiptForm = ref({
   received_at: new Date().toISOString().slice(0, 10),
   location_id: '',
   quantity_received: 0,
-  unit_cost: 0
+  unit_cost: 0,
+  employee_name: defaultEmployeeName.value
 })
 
 const receiptSnapshot = ref<typeof receiptForm.value | null>(null)
+
+watch(
+  defaultEmployeeName,
+  (value) => {
+    if (!form.value.employee_name) {
+      form.value.employee_name = value
+    }
+    if (!receiptForm.value.employee_name) {
+      receiptForm.value.employee_name = value
+    }
+  },
+  { immediate: true }
+)
 
 const setReceiptSnapshot = () => {
   receiptSnapshot.value = { ...receiptForm.value }
@@ -1061,7 +1128,8 @@ const receiptChanged = computed(() => {
     receiptSnapshot.value.received_at !== receiptForm.value.received_at ||
     receiptSnapshot.value.location_id !== receiptForm.value.location_id ||
     receiptSnapshot.value.quantity_received !== receiptForm.value.quantity_received ||
-    receiptSnapshot.value.unit_cost !== receiptForm.value.unit_cost
+    receiptSnapshot.value.unit_cost !== receiptForm.value.unit_cost ||
+    receiptSnapshot.value.employee_name !== receiptForm.value.employee_name
   )
 })
 
@@ -1131,7 +1199,11 @@ const formatCurrency = (value: number) => {
 const formatCostSheetEntry = (entry: CostSheetEntry) => {
   const modelLabel = entry.model ? ` (${entry.model})` : ''
   const unitLabel = entry.unit ? ` • ${entry.unit}` : ''
-  return `${entry.item_name}${modelLabel}${unitLabel} • ${entry.quantity} x ${formatCurrency(entry.unit_cost)}`
+  const base = `${entry.item_name}${modelLabel}${unitLabel} • ${entry.quantity}`
+  if (!canViewCost.value) {
+    return base
+  }
+  return `${base} x ${formatCurrency(entry.unit_cost)}`
 }
 
 const applyCostSheetEntry = (entry: CostSheetEntry) => {
@@ -1220,6 +1292,9 @@ const formErrors = computed(() => {
   if (!form.value.unit?.trim()) {
     errors.push(t('inventory.validation.unitRequired'))
   }
+  if (!form.value.employee_name?.trim()) {
+    errors.push(t('inventory.validation.employeeRequired'))
+  }
   if (!form.value.item_type) {
     errors.push(t('inventory.validation.typeRequired'))
   }
@@ -1249,6 +1324,9 @@ const formErrors = computed(() => {
   }
   if (receiptForm.value.quantity_received > 0 && !receiptForm.value.received_at) {
     errors.push(t('inventory.validation.receiptDateRequired'))
+  }
+  if (receiptForm.value.quantity_received > 0 && !receiptForm.value.employee_name?.trim()) {
+    errors.push(t('inventory.validation.receiptEmployeeRequired'))
   }
   if (receiptForm.value.unit_cost < 0) {
     errors.push(t('inventory.validation.unitCostNonNegative'))
@@ -1327,7 +1405,8 @@ const resetForm = () => {
     received_at: new Date().toISOString().slice(0, 10),
     location_id: '',
     quantity_received: 0,
-    unit_cost: 0
+    unit_cost: 0,
+    employee_name: defaultEmployeeName.value
   }
   setReceiptSnapshot()
 }
@@ -1366,7 +1445,8 @@ const startEdit = (item: Item) => {
     received_at: lastReceipt?.received_at ?? new Date().toISOString().slice(0, 10),
     location_id: lastReceipt?.location_id ?? inventoryRow?.location_id ?? '',
     quantity_received: lastReceipt?.quantity_received ?? 0,
-    unit_cost: lastReceipt?.unit_cost ?? item.cost ?? 0
+    unit_cost: lastReceipt?.unit_cost ?? item.cost ?? 0,
+    employee_name: lastReceipt?.employee_name ?? defaultEmployeeName.value
   }
   setReceiptSnapshot()
 
@@ -1394,6 +1474,7 @@ const startEdit = (item: Item) => {
     manufacturer: item.manufacturer ?? '',
     warranty_period: item.warranty_period ?? null,
     unit: item.unit ?? '',
+    employee_name: item.employee_name ?? '',
     pricing_mode: item.pricing_mode ?? 'MANUAL',
     margin_percent: item.margin_percent ?? 0,
     price_override_reason: item.price_override_reason ?? '',
@@ -1736,7 +1817,8 @@ const handleSubmit = async () => {
         received_at: receiptForm.value.received_at || new Date().toISOString().slice(0, 10),
         location_id: receiptForm.value.location_id,
         quantity_received: receiptForm.value.quantity_received,
-        unit_cost: receiptForm.value.unit_cost
+        unit_cost: receiptForm.value.unit_cost,
+        employee_name: receiptForm.value.employee_name?.trim() || null
       }
     : null
 
@@ -1778,6 +1860,7 @@ const handleSubmit = async () => {
         manufacturer: form.value.manufacturer ?? null,
         warranty_period: form.value.warranty_period ?? null,
         unit: form.value.unit?.trim() ? form.value.unit.trim() : null,
+        employee_name: form.value.employee_name?.trim() || null,
         pricing_mode: form.value.pricing_mode ?? 'MANUAL',
         margin_percent: form.value.margin_percent ?? null,
         price_override_reason: form.value.price_override_reason?.trim() || null,
@@ -1811,7 +1894,8 @@ const handleSubmit = async () => {
         cost_sheet_vat_rate: form.value.cost_sheet_vat_rate ?? null,
         cost_sheet_entry_id: form.value.cost_sheet_entry_id ?? null,
         price: form.value.price,
-        cost: form.value.cost
+        cost: form.value.cost,
+        employee_name: form.value.employee_name?.trim() || null
       })
       if (receiptPayload && receiptPayload.location_id) {
         await store.receiveStock({

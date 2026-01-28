@@ -1,4 +1,11 @@
 import { computed } from 'vue'
+import { useInventoryStore } from '~/stores/inventory'
+import { useMaintenanceStore } from '~/stores/maintenance'
+import { useSalesStore } from '~/stores/sales'
+import { useSettingsStore } from '~/stores/settings'
+import { resetDatabase } from '~/composables/useDatabase'
+import { usePermissions } from '~/composables/usePermissions'
+import { useFlashMessage } from '~/composables/useFlashMessage'
 
 export type AuthUser = {
   user_id: string
@@ -35,6 +42,19 @@ export const useAuth = () => {
     await $fetch('/api/auth/logout', { method: 'POST' })
     user.value = null
     isLoaded.value = false
+    const inventoryStore = useInventoryStore()
+    const maintenanceStore = useMaintenanceStore()
+    const salesStore = useSalesStore()
+    const settingsStore = useSettingsStore()
+    inventoryStore.reset()
+    maintenanceStore.reset()
+    salesStore.reset()
+    settingsStore.reset()
+    const { resetPermissions } = usePermissions()
+    resetPermissions()
+    const { clearFlashMessage } = useFlashMessage()
+    clearFlashMessage()
+    await resetDatabase()
   }
 
   const isAuthenticated = computed(() => Boolean(user.value))

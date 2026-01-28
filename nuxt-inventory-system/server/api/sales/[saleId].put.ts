@@ -138,10 +138,12 @@ export default defineEventHandler(async (event) => {
   const total = subtotal - discount + tax
 
   const saleDate = saleData.sale_date ? new Date(String(saleData.sale_date)) : existing.sale_date
+  const canEditEmployee = user.role === 'admin'
+  const hasPerformedBy = Object.prototype.hasOwnProperty.call(saleData ?? {}, 'performed_by')
+  const requestedEmployee =
+    typeof saleData.performed_by === 'string' ? String(saleData.performed_by).trim() : ''
   const performedBy =
-    typeof saleData.performed_by === 'string' && saleData.performed_by.trim()
-      ? String(saleData.performed_by).trim()
-      : existing.performed_by
+    canEditEmployee && hasPerformedBy ? (requestedEmployee ? requestedEmployee : null) : existing.performed_by
 
   const rawAttachments = Array.isArray((body as { attachments?: unknown[] })?.attachments)
     ? (body as { attachments: unknown[] }).attachments

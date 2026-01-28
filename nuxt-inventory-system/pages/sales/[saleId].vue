@@ -53,6 +53,12 @@
           </div>
         </div>
         <div>
+          <label class="text-xs font-semibold uppercase text-slate-500">{{ t('sales.detail.employeeName') }}</label>
+          <div class="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            {{ sale.performed_by || '-' }}
+          </div>
+        </div>
+        <div>
           <label class="text-xs font-semibold uppercase text-slate-500">{{ t('sales.detail.saleDate') }}</label>
           <div class="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             {{ formatDate(sale.sale_date ?? sale.created_at) }}

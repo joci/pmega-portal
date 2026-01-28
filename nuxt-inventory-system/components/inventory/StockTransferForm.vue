@@ -133,6 +133,7 @@
             v-model="transferForm.employee_name"
             type="text"
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :disabled="!isAdmin"
           />
         </div>
       </div>
@@ -174,10 +175,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { usePermissions } from '~/composables/usePermissions'
 import { useFlashMessage } from '~/composables/useFlashMessage'
+import { useAuth } from '~/composables/useAuth'
 
 const props = withDefaults(
   defineProps<{
@@ -193,8 +195,11 @@ const { can, loadPermissions } = usePermissions()
 const { setFlashMessage } = useFlashMessage()
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { user } = useAuth()
 
 const canEditInventory = computed(() => can('inventory.edit'))
+const isAdmin = computed(() => user.value?.role === 'admin')
+const defaultEmployeeName = computed(() => user.value?.name || user.value?.username || user.value?.email || '')
 
 const transferForm = reactive({
   item_id: '',
@@ -210,6 +215,16 @@ const transferForm = reactive({
   attachment_file_type: '',
   attachment_file_size: 0
 })
+
+watch(
+  defaultEmployeeName,
+  (value) => {
+    if (!transferForm.employee_name) {
+      transferForm.employee_name = value
+    }
+  },
+  { immediate: true }
+)
 
 const formErrors = ref<string[]>([])
 const submitError = ref('')
@@ -245,7 +260,7 @@ const resetForm = () => {
   transferForm.transferred_at = new Date().toISOString().slice(0, 10)
   transferForm.reference = ''
   transferForm.notes = ''
-  transferForm.employee_name = ''
+  transferForm.employee_name = defaultEmployeeName.value
   transferForm.attachment_data_url = ''
   transferForm.attachment_file_name = ''
   transferForm.attachment_file_type = ''

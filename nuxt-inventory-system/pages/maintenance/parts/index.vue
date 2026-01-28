@@ -82,7 +82,7 @@
             </div>
             <div>
               <div class="font-semibold text-slate-500">{{ t('maintenance.fields.technician') }}</div>
-              <div class="text-slate-900">{{ partRequestForm.technician_id || '-' }}</div>
+              <div class="text-slate-900">{{ technicianName(partRequestForm.technician_id) }}</div>
             </div>
           </div>
         </div>
@@ -233,10 +233,15 @@
               <label class="text-xs font-semibold uppercase text-slate-500">
                 {{ t('maintenance.fields.technician') }}
               </label>
-              <input
+              <select
                 v-model="partRequestForm.technician_id"
                 class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              />
+              >
+                <option value="">{{ t('maintenance.options.selectTechnician') }}</option>
+                <option v-for="technician in technicians" :key="technician.user_id" :value="technician.user_id">
+                  {{ technicianLabel(technician) }}
+                </option>
+              </select>
             </div>
             <div>
               <label class="text-xs font-semibold uppercase text-slate-500">
@@ -245,6 +250,7 @@
               <select
                 v-model="partRequestForm.status"
                 class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                :disabled="!canApproveParts"
               >
                 <option value="REQUESTED">{{ t('maintenance.partRequest.statusRequested') }}</option>
                 <option value="APPROVED">{{ t('maintenance.partRequest.statusApproved') }}</option>
@@ -326,6 +332,7 @@
                 <th class="py-2 pr-4">{{ t('maintenance.parts.columns.requestedBy') }}</th>
                 <th class="py-2 pr-4">{{ t('maintenance.parts.columns.requestedAt') }}</th>
                 <th class="py-2 pr-4">{{ t('maintenance.parts.columns.receipt') }}</th>
+                <th class="py-2 pr-4">{{ t('maintenance.parts.columns.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -342,13 +349,37 @@
                 <td class="py-3 pr-4 text-sm text-slate-700">
                   {{ formatAmount(lineTotal(request)) }}
                 </td>
-                <td class="py-3 pr-4 text-sm text-slate-700">{{ request.status }}</td>
+                <td class="py-3 pr-4 text-sm text-slate-700">
+                  <select
+                    v-if="canApproveParts"
+                    class="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                    :value="request.status"
+                    @change="handleStatusChange(request, $event)"
+                  >
+                    <option value="REQUESTED">{{ t('maintenance.partRequest.statusRequested') }}</option>
+                    <option value="APPROVED">{{ t('maintenance.partRequest.statusApproved') }}</option>
+                    <option value="REJECTED">{{ t('maintenance.partRequest.statusRejected') }}</option>
+                    <option value="FULFILLED">{{ t('maintenance.partRequest.statusFulfilled') }}</option>
+                    <option value="CANCELLED">{{ t('maintenance.partRequest.statusCancelled') }}</option>
+                  </select>
+                  <span v-else>{{ request.status }}</span>
+                </td>
                 <td class="py-3 pr-4 text-sm text-slate-700">{{ request.requested_by }}</td>
                 <td class="py-3 pr-4 text-sm text-slate-700">
                   {{ formatDate(request.requested_at) }}
                 </td>
                 <td class="py-3 pr-4 text-sm text-slate-700">
                   {{ request.external_receipt_number || '-' }}
+                </td>
+                <td class="py-3 pr-4 text-sm text-slate-700">
+                  <button
+                    v-if="canManagePartRequests"
+                    type="button"
+                    class="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                    @click="confirmDelete(request)"
+                  >
+                    {{ t('maintenance.parts.actions.delete') }}
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -374,16 +405,27 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useMaintenanceStore } from '~/stores/maintenance'
 import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
 import type { Item, MaintenanceTicket, PartRequest } from '~/types/database'
+
+type TechnicianOption = {
+  user_id: string
+  name: string | null
+  username: string
+  email: string
+}
 
 const store = useMaintenanceStore()
 const inventoryStore = useInventoryStore()
 const { can, loadPermissions } = usePermissions()
+const { user } = useAuth()
 const { locale, t } = useI18n()
 const route = useRoute()
 
 const canViewMaintenance = computed(() => can('maintenance.view'))
 const canRequestParts = computed(() => can('maintenance.parts.request'))
+const canApproveParts = computed(() => user.value?.role === 'admin' || user.value?.role === 'manager')
+const canManagePartRequests = computed(() => user.value?.role === 'admin' || user.value?.role === 'manager')
 
 const selectedTicketId = ref('')
 const searchQuery = ref('')
@@ -391,6 +433,7 @@ const partRequestMode = ref<'internal' | 'external'>('internal')
 const partRequestMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const maxPartMatches = 12
 const isPartMenuOpen = ref(false)
+const technicians = ref<TechnicianOption[]>([])
 
 const partRequestForm = reactive({
   part_id: '',
@@ -409,6 +452,26 @@ const partRequestForm = reactive({
   external_receipt_file_type: '',
   external_receipt_file_size: 0
 })
+
+const defaultRequestedBy = computed(() => {
+  if (user.value?.name) {
+    return user.value.name
+  }
+  if (user.value?.username) {
+    return user.value.username
+  }
+  return user.value?.email ?? ''
+})
+
+watch(
+  defaultRequestedBy,
+  (value) => {
+    if (!partRequestForm.requested_by) {
+      partRequestForm.requested_by = value
+    }
+  },
+  { immediate: true }
+)
 
 const customersById = computed(() => new Map(store.customers.map((entry) => [entry.customer_id, entry])))
 const devicesById = computed(() => new Map(store.customerDevices.map((entry) => [entry.device_id, entry])))
@@ -455,6 +518,18 @@ const ticketOptions = computed(() =>
 
 const locationName = (locationId: string) => {
   return inventoryStore.locations.find((entry) => entry.location_id === locationId)?.name ?? '-'
+}
+
+const technicianLabel = (technician: TechnicianOption) => {
+  return technician.name || technician.username || technician.email || technician.user_id
+}
+
+const technicianName = (technicianId: string) => {
+  if (!technicianId) {
+    return '-'
+  }
+  const entry = technicians.value.find((tech) => tech.user_id === technicianId)
+  return entry ? technicianLabel(entry) : technicianId
 }
 
 const partName = (request: PartRequest) => {
@@ -614,7 +689,7 @@ const resetPartRequestForm = () => {
   partRequestForm.part_id = ''
   partRequestForm.part_query = ''
   partRequestForm.quantity_requested = 1
-  partRequestForm.requested_by = ''
+  partRequestForm.requested_by = defaultRequestedBy.value
   partRequestForm.technician_id = selectedTicket.value?.technician_id ?? ''
   partRequestForm.status = 'REQUESTED'
   partRequestForm.notes = ''
@@ -665,6 +740,15 @@ const clearExternalReceipt = () => {
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'ETB' }).format(value || 0)
+}
+
+const loadTechnicians = async () => {
+  try {
+    const response = await $fetch<{ technicians: TechnicianOption[] }>('/api/users/technicians')
+    technicians.value = response.technicians ?? []
+  } catch (error) {
+    console.warn('Failed to load technicians', error)
+  }
 }
 
 const formatDate = (value?: string | null) => {
@@ -778,46 +862,124 @@ const submitPartRequest = async () => {
     }
   }
 
-  await store.createPartRequest({
-    ticket_id: selectedTicket.value.ticket_id,
-    customer_device_id: selectedTicket.value.customer_device_id,
-    part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
-    quantity_requested: partRequestForm.quantity_requested,
-    requested_by: partRequestForm.requested_by,
-    technician_id: partRequestForm.technician_id,
-    status: partRequestForm.status,
-    source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
-    external_item_name:
-      partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
-    external_model:
-      partRequestMode.value === 'external' && partRequestForm.external_model.trim()
-        ? partRequestForm.external_model.trim()
-        : null,
-    external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
-    external_receipt_number:
-      partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
-    external_receipt_data_url:
-      partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
-        ? partRequestForm.external_receipt_data_url
-        : null,
-    external_receipt_file_name:
-      partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
-        ? partRequestForm.external_receipt_file_name
-        : null,
-    external_receipt_file_type:
-      partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
-        ? partRequestForm.external_receipt_file_type
-        : null,
-    external_receipt_file_size:
-      partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
-        ? partRequestForm.external_receipt_file_size
-        : null,
-    notes: partRequestForm.notes || null,
-    location_id: selectedTicket.value.location_id
-  })
+  const isApproved = partRequestForm.status === 'APPROVED' && canApproveParts.value
+  const approvedAt = isApproved ? new Date().toISOString() : null
+  const approvedBy = isApproved ? user.value?.user_id ?? null : null
+
+  try {
+    await store.createPartRequest({
+      ticket_id: selectedTicket.value.ticket_id,
+      customer_device_id: selectedTicket.value.customer_device_id,
+      part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
+      quantity_requested: partRequestForm.quantity_requested,
+      requested_by: partRequestForm.requested_by,
+      technician_id: partRequestForm.technician_id,
+      status: partRequestForm.status,
+      source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
+      external_item_name:
+        partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
+      external_model:
+        partRequestMode.value === 'external' && partRequestForm.external_model.trim()
+          ? partRequestForm.external_model.trim()
+          : null,
+      external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
+      external_receipt_number:
+        partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
+      external_receipt_data_url:
+        partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
+          ? partRequestForm.external_receipt_data_url
+          : null,
+      external_receipt_file_name:
+        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
+          ? partRequestForm.external_receipt_file_name
+          : null,
+      external_receipt_file_type:
+        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
+          ? partRequestForm.external_receipt_file_type
+          : null,
+      external_receipt_file_size:
+        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
+          ? partRequestForm.external_receipt_file_size
+          : null,
+      approved_by: approvedBy,
+      approved_at: approvedAt,
+      notes: partRequestForm.notes || null,
+      location_id: selectedTicket.value.location_id
+    })
+  } catch (error: any) {
+    const statusMessage = error?.data?.statusMessage || error?.message
+    if (statusMessage === 'INSUFFICIENT_STOCK') {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
+      return
+    }
+    throw error
+  }
 
   partRequestMessage.value = { type: 'primary', text: t('maintenance.messages.partRequestSaved') }
   resetPartRequestForm()
+}
+
+const handleStatusChange = async (request: PartRequest, event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const nextStatus = target.value as PartRequest['status']
+  if (nextStatus === request.status) {
+    return
+  }
+  partRequestMessage.value = null
+  const isApproved = nextStatus === 'APPROVED'
+  const approvedAt = isApproved ? new Date().toISOString() : request.approved_at ?? null
+  const approvedBy = isApproved ? user.value?.user_id ?? null : request.approved_by ?? null
+
+  try {
+    await store.updatePartRequest({
+      ...request,
+      status: nextStatus,
+      approved_by: approvedBy,
+      approved_at: approvedAt
+    })
+    partRequestMessage.value = { type: 'primary', text: t('maintenance.messages.partRequestUpdated') }
+  } catch (error: any) {
+    const statusMessage = error?.data?.statusMessage || error?.message
+    if (statusMessage === 'INSUFFICIENT_STOCK') {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
+      return
+    }
+    if (statusMessage === 'REQUEST_APPROVED_LOCKED') {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestLocked') }
+      return
+    }
+    if (statusMessage === 'FORBIDDEN') {
+      partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
+      return
+    }
+    throw error
+  }
+}
+
+const confirmDelete = async (request: PartRequest) => {
+  if (!process.client) {
+    return
+  }
+  const confirmed = window.confirm(t('maintenance.messages.partRequestDeleteConfirm'))
+  if (!confirmed) {
+    return
+  }
+  partRequestMessage.value = null
+  try {
+    await store.deletePartRequest(request.request_id)
+    partRequestMessage.value = { type: 'primary', text: t('maintenance.messages.partRequestDeleted') }
+  } catch (error: any) {
+    const statusMessage = error?.data?.statusMessage || error?.message
+    if (statusMessage === 'REQUEST_APPROVED_LOCKED') {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestLocked') }
+      return
+    }
+    if (statusMessage === 'FORBIDDEN') {
+      partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
+      return
+    }
+    throw error
+  }
 }
 
 watch(
@@ -839,6 +1001,7 @@ watch(
 
 onMounted(async () => {
   await loadPermissions()
+  await loadTechnicians()
   if (!inventoryStore.isLoaded) {
     await inventoryStore.loadAll()
   }

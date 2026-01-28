@@ -120,8 +120,31 @@
       </div>
     </div>
 
-    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-      {{ t('settings.placeholder') }}
+    <div
+      v-if="canResetData"
+      class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 shadow-sm"
+    >
+      <div class="text-base font-semibold text-rose-900">{{ t('settings.reset.title') }}</div>
+      <p class="mt-2 text-sm text-rose-700">
+        {{ t('settings.reset.description') }}
+      </p>
+      <div v-if="resetMessage" class="mt-4">
+        <UAlert :color="resetMessage.type" :title="resetMessage.text" />
+      </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-[1.5fr,auto] md:items-end">
+        <div>
+          <label class="text-xs font-semibold uppercase text-rose-700">{{ t('settings.reset.confirmLabel') }}</label>
+          <input
+            v-model="resetConfirm"
+            class="mt-1 w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm"
+            :placeholder="t('settings.reset.confirmPlaceholder')"
+          />
+          <p class="mt-1 text-xs text-rose-600">{{ t('settings.reset.confirmHelper') }}</p>
+        </div>
+        <UButton color="red" :disabled="isResetting" @click="resetAllData">
+          {{ t('settings.reset.action') }}
+        </UButton>
+      </div>
     </div>
   </section>
 </template>
@@ -130,17 +153,29 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { useSettingsStore } from '~/stores/settings'
+import { useMaintenanceStore } from '~/stores/maintenance'
+import { useSalesStore } from '~/stores/sales'
 import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
+import { resetDatabase } from '~/composables/useDatabase'
 
 const settingsStore = useSettingsStore()
 const inventoryStore = useInventoryStore()
+const maintenanceStore = useMaintenanceStore()
+const salesStore = useSalesStore()
 const { can, loadPermissions } = usePermissions()
+const { user } = useAuth()
 const { t } = useI18n()
 
 const canViewSettings = computed(() => can('settings.view'))
 const canEditSettings = computed(() => can('settings.edit'))
 const canViewTaxRate = computed(() => can('settings.field.tax_rate.view'))
 const canEditTaxRate = computed(() => can('settings.field.tax_rate.edit'))
+const canResetData = computed(() => user.value?.role === 'admin')
+
+const resetConfirm = ref('')
+const resetMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
+const isResetting = ref(false)
 
 const form = reactive({
   tax_rate: '0.15',
@@ -255,6 +290,41 @@ const saveSettings = async () => {
   })
 
   message.value = { type: 'primary', text: t('settings.messages.saved') }
+}
+
+const resetAllData = async () => {
+  resetMessage.value = null
+  if (!canResetData.value) {
+    resetMessage.value = { type: 'red', text: t('settings.reset.forbidden') }
+    return
+  }
+  if (resetConfirm.value.trim() !== 'RESET_ALL_DATA') {
+    resetMessage.value = { type: 'red', text: t('settings.reset.invalidConfirm') }
+    return
+  }
+  isResetting.value = true
+  try {
+    await $fetch('/api/admin/reset', {
+      method: 'POST',
+      body: { confirm: resetConfirm.value.trim() }
+    })
+    inventoryStore.reset()
+    maintenanceStore.reset()
+    salesStore.reset()
+    settingsStore.reset()
+    await resetDatabase()
+    await inventoryStore.loadAll()
+    await maintenanceStore.loadAll()
+    await salesStore.loadAll()
+    await settingsStore.loadAll()
+    resetConfirm.value = ''
+    resetMessage.value = { type: 'primary', text: t('settings.reset.success') }
+  } catch (error) {
+    resetMessage.value = { type: 'red', text: t('settings.reset.failed') }
+    console.warn('Failed to reset data', error)
+  } finally {
+    isResetting.value = false
+  }
 }
 
 onMounted(async () => {

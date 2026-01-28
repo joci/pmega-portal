@@ -1,9 +1,11 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapMaintenanceAttachment, mapMaintenanceTicket } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const ticketId = event.context.params?.ticketId
   if (!ticketId) {
     throw createError({ statusCode: 400, statusMessage: 'TICKET_ID_REQUIRED' })
@@ -14,6 +16,11 @@ export default defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'TICKET_NOT_FOUND' })
   }
+  const canEditEmployee = user.role === 'admin'
+  const hasEmployee = Object.prototype.hasOwnProperty.call(body ?? {}, 'employee_name')
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const nextEmployee =
+    canEditEmployee && hasEmployee ? (requestedEmployee ? requestedEmployee : null) : existing.employee_name ?? null
 
   const nextStatus = body.status ?? existing.status
   const nextReceipt =
@@ -64,6 +71,7 @@ export default defineEventHandler(async (event) => {
         receipt_number: nextReceipt,
         ...attachmentUpdates,
         technician_id: body.technician_id ?? undefined,
+        employee_name: nextEmployee,
         status: nextStatus,
         problem_description: body.problem_description ?? undefined,
         diagnosis: body.diagnosis ?? undefined,
@@ -80,7 +88,7 @@ export default defineEventHandler(async (event) => {
         target_delivery_at: body.target_delivery_at ? new Date(body.target_delivery_at) : undefined,
         completed_at: body.completed_at ? new Date(body.completed_at) : undefined,
         delivered_at: nextDelivered ? new Date(nextDelivered) : undefined,
-        updated_by: body.updated_by ?? undefined,
+        updated_by: user.user_id,
         location_id: body.location_id ?? undefined,
         sync_status: 'SYNCED'
       }

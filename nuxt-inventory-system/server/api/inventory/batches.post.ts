@@ -7,6 +7,9 @@ export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
   const user = await requireAuthUser(event)
   const body = await readBody(event)
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const fallbackEmployee = user.name || user.username || user.email || ''
+  const employeeName = user.role === 'admin' && requestedEmployee ? requestedEmployee : fallbackEmployee
 
   if (!body?.item_id || !body?.location_id) {
     throw createError({ statusCode: 400, statusMessage: 'ITEM_AND_LOCATION_REQUIRED' })
@@ -31,6 +34,7 @@ export default defineEventHandler(async (event) => {
         quantity_remaining: quantityReceived,
         unit_cost: body.unit_cost ?? 0,
         reference: body.reference ?? null,
+        employee_name: employeeName || null,
         created_by: user.user_id,
         sync_status: 'SYNCED'
       }
@@ -83,6 +87,7 @@ export default defineEventHandler(async (event) => {
         movement_type: 'RECEIPT',
         reference_id: body.reference ?? batch.batch_id,
         unit_cost: body.unit_cost ?? 0,
+        employee_name: employeeName || null,
         created_at: receivedAt,
         created_by: user.user_id,
         sync_status: 'SYNCED'

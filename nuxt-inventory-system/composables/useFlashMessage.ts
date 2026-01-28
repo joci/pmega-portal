@@ -16,9 +16,14 @@ export const useFlashMessage = () => {
     return message
   }
 
+  const clearFlashMessage = () => {
+    flash.value = null
+  }
+
   return {
     flashMessage: flash,
     setFlashMessage,
-    consumeFlashMessage
+    consumeFlashMessage,
+    clearFlashMessage
   }
 }

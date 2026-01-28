@@ -69,7 +69,7 @@
               </div>
               <div class="mt-1 text-slate-900">{{ transfer.quantity }}</div>
             </div>
-            <div>
+            <div v-if="canViewCost">
               <div class="text-xs font-semibold uppercase text-slate-500">
                 {{ t('inventory.fields.unitCost') }}
               </div>
@@ -143,6 +143,7 @@ const { t, locale } = useI18n()
 const localePath = useLocalePath()
 
 const canViewInventory = computed(() => can('inventory.view'))
+const canViewCost = computed(() => can('inventory.field.cost.view'))
 
 const transferId = computed(() => {
   const raw = route.params.transferId

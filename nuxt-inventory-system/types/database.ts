@@ -4,7 +4,7 @@ export type CategoryType = 'PRODUCT' | 'SPARE_PART' | 'BOTH'
 export type ItemType = 'PRODUCT' | 'SPARE_PART'
 export type LocationType = 'STORE' | 'WORKSHOP' | 'WAREHOUSE'
 export type StockLocation = 'STORE' | 'WORKSHOP' | 'BOTH'
-export type InventoryMovementType = 'RECEIPT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'SALE' | 'ADJUSTMENT'
+export type InventoryMovementType = 'RECEIPT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'SALE' | 'ISSUE' | 'ADJUSTMENT'
 export type PricingMode = 'MANUAL' | 'MARGIN_PERCENT' | 'PRICE_LIST' | 'COST_SHEET'
 
 export type SaleType = 'RETAIL' | 'MAINTENANCE' | 'INTERNAL'
@@ -104,6 +104,7 @@ export interface Item {
   manufacturer?: string | null
   warranty_period?: number | null
   unit?: string | null
+  employee_name?: string | null
   pricing_mode?: PricingMode
   margin_percent?: number | null
   price_override_reason?: string | null
@@ -151,6 +152,7 @@ export interface CostSheetEntry {
   item_name: string
   model?: string | null
   unit?: string | null
+  employee_name?: string | null
   quantity: number
   unit_cost: number
   total_with_vat: number
@@ -174,6 +176,7 @@ export interface InventoryBatch {
   quantity_remaining: number
   unit_cost: number
   reference?: string | null
+  employee_name?: string | null
   created_at?: string
   updated_at?: string
   created_by?: string | null
@@ -366,6 +369,7 @@ export interface MaintenanceTicket {
   customer_id: string
   customer_device_id: string
   technician_id?: string | null
+  employee_name?: string | null
   status: TicketStatus
   problem_description: string
   diagnosis?: string | null

@@ -130,3 +130,11 @@ export const useDatabase = () => {
 
   return db
 }
+
+export const resetDatabase = async () => {
+  if (!process.client || !db) {
+    return
+  }
+  await db.delete()
+  db = null
+}

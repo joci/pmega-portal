@@ -21,6 +21,11 @@ export default defineEventHandler(async (event) => {
   if (existing.item) {
     throw createError({ statusCode: 409, statusMessage: 'COST_SHEET_ALREADY_USED' })
   }
+  const canEditEmployee = user.role === 'admin'
+  const hasEmployee = Object.prototype.hasOwnProperty.call(body ?? {}, 'employee_name')
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const nextEmployee =
+    canEditEmployee && hasEmployee ? (requestedEmployee ? requestedEmployee : null) : existing.employee_name ?? null
 
   const nextName = typeof body?.item_name === 'string' ? body.item_name.trim() : existing.item_name
   if (!nextName) {
@@ -56,6 +61,7 @@ export default defineEventHandler(async (event) => {
       item_name: nextName,
       model: typeof body?.model === 'string' && body.model.trim() ? body.model.trim() : null,
       unit: typeof body?.unit === 'string' && body.unit.trim() ? body.unit.trim() : null,
+      employee_name: nextEmployee,
       quantity,
       unit_cost: unitCost,
       total_with_vat: totalWithVat,

@@ -106,6 +106,7 @@ export type StockReceiptInput = {
   quantity_received: number
   unit_cost: number
   reference?: string | null
+  employee_name?: string | null
 }
 
 export type StockIssueInput = {
@@ -143,6 +144,7 @@ export type CostSheetEntryInput = {
   item_name: string
   model?: string | null
   unit?: string | null
+  employee_name?: string | null
   quantity: number
   unit_cost: number
   entry_date?: string | null
@@ -775,6 +777,19 @@ export const useInventoryStore = defineStore('inventory', () => {
     })
   }
 
+  const reset = () => {
+    items.value = []
+    categories.value = []
+    locations.value = []
+    inventory.value = []
+    batches.value = []
+    movements.value = []
+    units.value = []
+    attachments.value = []
+    costSheets.value = []
+    isLoaded.value = false
+  }
+
   return {
     items,
     categories,
@@ -811,6 +826,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     reassignCategory,
     addAttachment,
     removeAttachment,
-    reorderAttachments
+    reorderAttachments,
+    reset
   }
 })

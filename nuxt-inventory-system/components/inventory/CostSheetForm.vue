@@ -26,6 +26,17 @@
         </div>
         <div>
           <label class="text-xs font-semibold uppercase text-slate-500">
+            {{ t('inventory.costSheetPage.fields.employeeName') }}
+          </label>
+          <input
+            v-model="form.employee_name"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :disabled="!isAdmin"
+            required
+          />
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase text-slate-500">
             {{ t('inventory.costSheetPage.fields.itemName') }}
           </label>
           <input
@@ -78,7 +89,7 @@
               required
             />
           </div>
-          <div>
+          <div v-if="canViewCost">
             <label class="text-xs font-semibold uppercase text-slate-500">
               {{ t('inventory.costSheetPage.fields.unitCost') }}
             </label>
@@ -92,11 +103,20 @@
               required
             />
           </div>
+          <div v-else>
+            <label class="text-xs font-semibold uppercase text-slate-500">
+              {{ t('inventory.costSheetPage.fields.unitCost') }}
+            </label>
+            <div class="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-400">
+              {{ t('permissions.restricted') }}
+            </div>
+          </div>
         </div>
         <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <div class="flex items-center justify-between">
             <span>{{ t('inventory.costSheetPage.fields.totalWithVat') }}</span>
-            <span class="font-semibold text-slate-900">{{ formatCurrency(totalWithVat) }}</span>
+            <span v-if="canViewCost" class="font-semibold text-slate-900">{{ formatCurrency(totalWithVat) }}</span>
+            <span v-else class="font-semibold text-slate-400">{{ t('permissions.restricted') }}</span>
           </div>
           <div class="mt-1 text-xs text-slate-500">
             {{ t('inventory.costSheetPage.vatRate', { rate: vatRatePercent }) }}
@@ -125,11 +145,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useInventoryStore, type CostSheetEntryInput } from '~/stores/inventory'
 import { useSettingsStore } from '~/stores/settings'
 import { usePermissions } from '~/composables/usePermissions'
 import { useFlashMessage } from '~/composables/useFlashMessage'
+import { useAuth } from '~/composables/useAuth'
 import type { CostSheetEntry } from '~/types/database'
 
 const store = useInventoryStore()
@@ -140,15 +161,20 @@ const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 const { setFlashMessage } = useFlashMessage()
+const { user } = useAuth()
 
 const canViewInventory = computed(() => can('inventory.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
+const isAdmin = computed(() => user.value?.role === 'admin')
+const canViewCost = computed(() => can('inventory.field.cost.view'))
+const defaultEmployeeName = computed(() => user.value?.name || user.value?.username || user.value?.email || '')
 
 const form = ref<CostSheetEntryInput>({
   entry_date: new Date().toISOString().slice(0, 10),
   item_name: '',
   model: '',
   unit: '',
+  employee_name: defaultEmployeeName.value,
   quantity: 1,
   unit_cost: 0
 })
@@ -156,6 +182,16 @@ const formError = ref('')
 const editingEntryId = ref<string | null>(null)
 const isEditing = computed(() => Boolean(editingEntryId.value))
 const prefillEntryId = computed(() => (typeof route.query.entry === 'string' ? route.query.entry : ''))
+
+watch(
+  defaultEmployeeName,
+  (value) => {
+    if (!form.value.employee_name) {
+      form.value.employee_name = value
+    }
+  },
+  { immediate: true }
+)
 
 const vatRate = computed(() => {
   const rate = Number(settingsStore.getSetting('tax_rate')?.setting_value ?? 0)
@@ -180,6 +216,7 @@ const resetForm = async () => {
     item_name: '',
     model: '',
     unit: '',
+    employee_name: defaultEmployeeName.value,
     quantity: 1,
     unit_cost: 0
   }
@@ -205,6 +242,7 @@ const startEdit = (entry: CostSheetEntry) => {
     item_name: entry.item_name,
     model: entry.model ?? '',
     unit: entry.unit ?? '',
+    employee_name: entry.employee_name ?? '',
     quantity: entry.quantity,
     unit_cost: entry.unit_cost
   }
@@ -237,6 +275,10 @@ const handleSubmit = async () => {
     formError.value = t('inventory.costSheetPage.validation.unitRequired')
     return
   }
+  if (!form.value.employee_name?.trim()) {
+    formError.value = t('inventory.costSheetPage.validation.employeeRequired')
+    return
+  }
   if (form.value.quantity <= 0) {
     formError.value = t('inventory.costSheetPage.validation.quantityRequired')
     return
@@ -252,6 +294,7 @@ const handleSubmit = async () => {
       item_name: form.value.item_name.trim(),
       model: form.value.model?.trim() || null,
       unit: form.value.unit?.trim() || null,
+      employee_name: form.value.employee_name?.trim() || null,
       quantity: form.value.quantity,
       unit_cost: form.value.unit_cost
     }

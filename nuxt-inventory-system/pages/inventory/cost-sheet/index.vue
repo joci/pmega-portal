@@ -75,13 +75,13 @@
                   <span class="text-[10px] text-slate-400">{{ sortIndicator('quantity') }}</span>
                 </button>
               </th>
-              <th class="py-2 pr-4 text-right">
+              <th v-if="canViewCost" class="py-2 pr-4 text-right">
                 <button type="button" class="ml-auto flex items-center gap-1" @click="toggleSort('unitCost')">
                   {{ t('inventory.costSheetPage.fields.unitCost') }}
                   <span class="text-[10px] text-slate-400">{{ sortIndicator('unitCost') }}</span>
                 </button>
               </th>
-              <th class="py-2 pr-4 text-right">
+              <th v-if="canViewCost" class="py-2 pr-4 text-right">
                 <button type="button" class="ml-auto flex items-center gap-1" @click="toggleSort('total')">
                   {{ t('inventory.costSheetPage.fields.totalWithVat') }}
                   <span class="text-[10px] text-slate-400">{{ sortIndicator('total') }}</span>
@@ -98,7 +98,7 @@
           </thead>
           <tbody>
             <tr v-if="sortedEntries.length === 0">
-              <td colspan="9" class="py-6 text-center text-sm text-slate-500">
+              <td :colspan="columnCount" class="py-6 text-center text-sm text-slate-500">
                 {{ t('inventory.costSheetPage.list.noResults') }}
               </td>
             </tr>
@@ -112,8 +112,12 @@
               <td class="py-3 pr-4 text-sm text-slate-700">{{ entry.model || '-' }}</td>
               <td class="py-3 pr-4 text-sm text-slate-700">{{ entry.unit || '-' }}</td>
               <td class="py-3 pr-4 text-right text-sm text-slate-700">{{ entry.quantity }}</td>
-              <td class="py-3 pr-4 text-right text-sm text-slate-700">{{ formatCurrency(entry.unit_cost) }}</td>
-              <td class="py-3 pr-4 text-right text-sm text-slate-700">{{ formatCurrency(entry.total_with_vat) }}</td>
+              <td v-if="canViewCost" class="py-3 pr-4 text-right text-sm text-slate-700">
+                {{ formatCurrency(entry.unit_cost) }}
+              </td>
+              <td v-if="canViewCost" class="py-3 pr-4 text-right text-sm text-slate-700">
+                {{ formatCurrency(entry.total_with_vat) }}
+              </td>
               <td class="py-3 pr-4 text-sm">
                 <span
                   class="rounded-full px-2 py-1 text-[11px] font-semibold uppercase"
@@ -158,6 +162,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useInventoryStore } from '~/stores/inventory'
 import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
 import type { CostSheetEntry } from '~/types/database'
 import { useFlashMessage, type FlashMessage } from '~/composables/useFlashMessage'
 
@@ -167,9 +172,12 @@ const store = useInventoryStore()
 const { can, loadPermissions } = usePermissions()
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
+const { user } = useAuth()
 
 const canViewInventory = computed(() => can('inventory.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
+const canViewCost = computed(() => can('inventory.field.cost.view') || user.value?.role === 'admin')
+const columnCount = computed(() => (canViewCost.value ? 9 : 7))
 
 const { consumeFlashMessage } = useFlashMessage()
 const pageMessage = ref<FlashMessage | null>(null)
@@ -247,6 +255,9 @@ const sortedEntries = computed(() => {
 })
 
 const toggleSort = (key: SortKey) => {
+  if ((key === 'unitCost' || key === 'total') && !canViewCost.value) {
+    return
+  }
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
     return

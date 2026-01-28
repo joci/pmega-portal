@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
-import { $fetch } from 'ofetch'
+import { $fetch, FetchError } from 'ofetch'
 import { ref } from 'vue'
 import { useDatabase } from '~/composables/useDatabase'
+import { useInventoryStore } from '~/stores/inventory'
 import type {
   Customer,
   CustomerDevice,
@@ -193,13 +194,27 @@ export const useMaintenanceStore = defineStore('maintenance', () => {
     payload: Omit<PartRequest, 'request_id' | 'created_at' | 'updated_at' | 'sync_status'>
   ) => {
     const db = getDb()
-    const request = await $fetch<PartRequest>('/api/maintenance/part-requests', {
-      method: 'POST',
-      body: payload
-    })
+    let request: PartRequest
+    try {
+      request = await $fetch<PartRequest>('/api/maintenance/part-requests', {
+        method: 'POST',
+        body: payload
+      })
+    } catch (error) {
+      if (error instanceof FetchError && error.data?.statusMessage === 'INSUFFICIENT_STOCK') {
+        throw new Error('INSUFFICIENT_STOCK')
+      }
+      throw error
+    }
 
     partRequests.value = [request, ...partRequests.value]
     await db.partRequests.put(request)
+    if (request.status === 'APPROVED' && request.source_preference === 'STORE_INVENTORY') {
+      const inventoryStore = useInventoryStore()
+      if (inventoryStore.isLoaded) {
+        await inventoryStore.loadAll()
+      }
+    }
     return request.request_id
   }
 
@@ -217,15 +232,36 @@ export const useMaintenanceStore = defineStore('maintenance', () => {
 
   const updatePartRequest = async (payload: PartRequest) => {
     const db = getDb()
-    const updated = await $fetch<PartRequest>(`/api/maintenance/part-requests/${payload.request_id}`, {
-      method: 'PUT',
-      body: payload
-    })
+    let updated: PartRequest
+    try {
+      updated = await $fetch<PartRequest>(`/api/maintenance/part-requests/${payload.request_id}`, {
+        method: 'PUT',
+        body: payload
+      })
+    } catch (error) {
+      if (error instanceof FetchError && error.data?.statusMessage === 'INSUFFICIENT_STOCK') {
+        throw new Error('INSUFFICIENT_STOCK')
+      }
+      throw error
+    }
 
     partRequests.value = partRequests.value.map((entry) =>
       entry.request_id === updated.request_id ? updated : entry
     )
     await db.partRequests.put(updated)
+    if (updated.source_preference === 'STORE_INVENTORY') {
+      const inventoryStore = useInventoryStore()
+      if (inventoryStore.isLoaded) {
+        await inventoryStore.loadAll()
+      }
+    }
+  }
+
+  const deletePartRequest = async (requestId: string) => {
+    const db = getDb()
+    await $fetch(`/api/maintenance/part-requests/${requestId}`, { method: 'DELETE' })
+    partRequests.value = partRequests.value.filter((entry) => entry.request_id !== requestId)
+    await db.partRequests.delete(requestId)
   }
 
   const updatePartUsage = async (payload: PartUsage) => {
@@ -250,6 +286,16 @@ export const useMaintenanceStore = defineStore('maintenance', () => {
     await db.maintenanceAttachments.delete(attachmentId)
   }
 
+  const reset = () => {
+    tickets.value = []
+    partRequests.value = []
+    partUsage.value = []
+    attachments.value = []
+    customers.value = []
+    customerDevices.value = []
+    isLoaded.value = false
+  }
+
   return {
     tickets,
     partRequests,
@@ -269,6 +315,8 @@ export const useMaintenanceStore = defineStore('maintenance', () => {
     createPartUsage,
     updatePartRequest,
     updatePartUsage,
-    deleteAttachment
+    deletePartRequest,
+    deleteAttachment,
+    reset
   }
 })

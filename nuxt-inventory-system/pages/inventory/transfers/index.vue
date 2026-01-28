@@ -49,7 +49,7 @@
               <th class="py-2 pr-4">{{ t('inventory.transfers.fields.toLocation') }}</th>
               <th class="py-2 pr-4">{{ t('inventory.transfers.fields.employeeName') }}</th>
               <th class="py-2 pr-4 text-right">{{ t('inventory.transfers.fields.quantity') }}</th>
-              <th class="py-2 pr-4 text-right">{{ t('inventory.fields.unitCost') }}</th>
+              <th v-if="canViewCost" class="py-2 pr-4 text-right">{{ t('inventory.fields.unitCost') }}</th>
               <th class="py-2">{{ t('inventory.stockCards.fields.reference') }}</th>
             </tr>
           </thead>
@@ -69,7 +69,7 @@
                 {{ transfer.employee_name || '-' }}
               </td>
               <td class="py-3 pr-4 text-right text-sm text-slate-700">{{ transfer.quantity }}</td>
-              <td class="py-3 pr-4 text-right text-sm text-slate-700">
+              <td v-if="canViewCost" class="py-3 pr-4 text-right text-sm text-slate-700">
                 {{ transfer.unit_cost !== null ? formatCurrency(transfer.unit_cost) : '-' }}
               </td>
               <td class="py-3 text-sm text-slate-700">
@@ -115,6 +115,7 @@ const localePath = useLocalePath()
 
 const canViewInventory = computed(() => can('inventory.view'))
 const canEditInventory = computed(() => can('inventory.edit'))
+const canViewCost = computed(() => can('inventory.field.cost.view'))
 
 const searchQuery = ref('')
 

@@ -9,6 +9,9 @@ export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
   const user = await requireAuthUser(event)
   const body = await readBody(event)
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const fallbackEmployee = user.name || user.username || user.email || ''
+  const employeeName = user.role === 'admin' && requestedEmployee ? requestedEmployee : fallbackEmployee
 
   const costSheetEntryId = typeof body?.cost_sheet_entry_id === 'string' ? body.cost_sheet_entry_id.trim() : ''
   const costSheetEntry = costSheetEntryId
@@ -105,6 +108,7 @@ export default defineEventHandler(async (event) => {
       unit:
         costSheetEntry?.unit ??
         (typeof body.unit === 'string' && body.unit.trim() ? body.unit.trim() : null),
+      employee_name: employeeName || null,
       pricing_mode: pricingMode,
       margin_percent: body.margin_percent ?? null,
       price_override_reason:

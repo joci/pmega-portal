@@ -7,6 +7,9 @@ export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
   const user = await requireAuthUser(event)
   const body = await readBody(event)
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const fallbackEmployee = user.name || user.username || user.email || ''
+  const employeeName = user.role === 'admin' && requestedEmployee ? requestedEmployee : fallbackEmployee
 
   const itemName = typeof body?.item_name === 'string' ? body.item_name.trim() : ''
   if (!itemName) {
@@ -42,6 +45,7 @@ export default defineEventHandler(async (event) => {
       item_name: itemName,
       model: typeof body?.model === 'string' && body.model.trim() ? body.model.trim() : null,
       unit: typeof body?.unit === 'string' && body.unit.trim() ? body.unit.trim() : null,
+      employee_name: employeeName || null,
       quantity,
       unit_cost: unitCost,
       total_with_vat: totalWithVat,

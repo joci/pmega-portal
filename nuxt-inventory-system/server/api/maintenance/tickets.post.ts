@@ -1,10 +1,15 @@
 import { createId } from '~/utils/id'
 import { getPrismaClient } from '~/server/utils/prisma'
 import { mapMaintenanceAttachment, mapMaintenanceTicket } from '~/server/utils/mappers'
+import { requireAuthUser } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const prisma = getPrismaClient()
+  const user = await requireAuthUser(event)
   const body = await readBody(event)
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const fallbackEmployee = user.name || user.username || user.email || ''
+  const employeeName = user.role === 'admin' && requestedEmployee ? requestedEmployee : fallbackEmployee
 
   if (!body?.customer_id || !body?.customer_device_id || !body?.location_id) {
     throw createError({ statusCode: 400, statusMessage: 'CUSTOMER_DEVICE_LOCATION_REQUIRED' })
@@ -57,6 +62,7 @@ export default defineEventHandler(async (event) => {
         customer_id: body.customer_id,
         customer_device_id: body.customer_device_id,
         technician_id: body.technician_id ?? null,
+        employee_name: employeeName || null,
         status: body.status,
         problem_description: body.problem_description,
         diagnosis: body.diagnosis ?? null,
@@ -73,8 +79,7 @@ export default defineEventHandler(async (event) => {
         target_delivery_at: body.target_delivery_at ? new Date(body.target_delivery_at) : null,
         completed_at: body.completed_at ? new Date(body.completed_at) : null,
         delivered_at: body.delivered_at ? new Date(body.delivered_at) : null,
-        created_by: body.created_by ?? null,
-        updated_by: body.updated_by ?? null,
+        created_by: user.user_id,
         location_id: body.location_id,
         sync_status: 'SYNCED'
       }

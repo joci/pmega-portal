@@ -55,6 +55,7 @@
       "priceUpdatedAt": "Price updated",
       "priceUpdatedAtEmpty": "Not set",
       "unit": "Unit",
+      "employeeName": "Employee name",
       "manufacturer": "Manufacturer",
       "barcode": "Barcode",
       "weight": "Weight (kg)",
@@ -96,6 +97,7 @@
       "vatRate": "VAT rate: {rate}%",
       "fields": {
         "date": "Date",
+        "employeeName": "Employee name",
         "itemName": "Item name",
         "model": "Model",
         "unit": "Unit",
@@ -132,6 +134,7 @@
         "itemNameRequired": "Item name is required.",
         "modelRequired": "Model is required.",
         "unitRequired": "Unit is required.",
+        "employeeRequired": "Employee name is required.",
         "quantityRequired": "Quantity must be greater than 0.",
         "unitCostNonNegative": "Unit cost must be 0 or higher.",
         "cannotEditAdded": "This entry is already added to inventory and cannot be edited.",
@@ -215,6 +218,7 @@
       "nameRequired": "Name is required.",
       "modelRequired": "Model is required.",
       "unitRequired": "Unit is required.",
+      "employeeRequired": "Employee name is required.",
       "typeRequired": "Type is required.",
       "categoryRequired": "Category is required.",
       "locationRequired": "Location is required.",
@@ -225,6 +229,7 @@
       "minStockNonNegative": "Min stock must be 0 or higher.",
       "reorderNonNegative": "Reorder quantity must be 0 or higher.",
       "receiptDateRequired": "Received date is required when receiving stock.",
+      "receiptEmployeeRequired": "Employee name is required when receiving stock.",
       "receiptLocationRequired": "Select a location for the receipt.",
       "unitCostNonNegative": "Unit cost must be 0 or higher.",
       "marginNonNegative": "Margin must be 0 or higher.",
@@ -342,9 +347,12 @@
         "reference": "Reference",
         "balance": "Balance"
       },
+      "summary": {
+        "total": "Totals"
+      },
       "types": {
         "receipt": "Received",
-        "issue": "Issued",
+      "issue": "Issued to maintenance",
         "sale": "Sale",
         "transferIn": "Transfer in",
         "transferOut": "Transfer out",
@@ -439,6 +447,7 @@
       "paymentStatus": "Payment Status",
       "paymentMethod": "Payment Method",
       "receiptNumber": "Receipt Number",
+      "employeeName": "Employee name",
       "location": "Location",
       "customerId": "Customer ID",
       "customerName": "Customer Name",
@@ -492,6 +501,7 @@
     },
     "messages": {
       "receiptRequired": "Receipt number is required.",
+      "employeeRequired": "Employee name is required.",
       "paymentMethodRequired": "Payment method is required.",
       "locationRequired": "Select a location before saving.",
       "lineRequired": "Add at least one line item.",
@@ -519,6 +529,7 @@
       "lineItemsTitle": "Line Items",
       "saleNumber": "Sale #",
       "receiptNumber": "Receipt #",
+      "employeeName": "Employee",
       "saleDate": "Date",
       "saleType": "Sale Type",
       "status": "Status",
@@ -570,6 +581,7 @@
       "serial": "Serial Number",
       "receiptNumber": "Workorder Receipt Number",
       "receiptAttachment": "Attachment Receipt Number",
+      "employeeName": "Employee name",
       "attachments": "Ticket Attachments",
       "receivedDate": "Received Date",
       "targetDeliveryDate": "Target Delivery Date",
@@ -590,6 +602,7 @@
       "outWarranty": "Out of Warranty",
       "extended": "Extended",
       "selectLocation": "Select location",
+      "selectTechnician": "Select technician",
       "pending": "Pending",
       "diagnosis": "Diagnosis",
       "waitingParts": "Waiting Parts",
@@ -692,7 +705,11 @@
         "requestedBy": "Requested By",
         "requestedAt": "Requested At",
         "receipt": "Receipt #",
-        "cost": "Price / Cost"
+        "cost": "Price / Cost",
+        "actions": "Actions"
+      },
+      "actions": {
+        "delete": "Delete"
       },
       "totalLabel": "Total parts price"
     },
@@ -700,6 +717,7 @@
       "customerRequired": "Customer name is required.",
       "deviceRequired": "Item name and model are required.",
       "receiptRequired": "Receipt number is required.",
+      "employeeRequired": "Employee name is required.",
       "receivedDateRequired": "Received date is required.",
       "deliveredDateRequired": "Actual delivered date is required before closing.",
       "ticketLocked": "Completed tickets are view-only.",
@@ -713,10 +731,15 @@
       "externalCostRequired": "External cost must be greater than 0.",
       "attachmentTooLarge": "\"{name}\" exceeds 5 MB.",
       "attachmentDeleteFailed": "Failed to remove attachment.",
+      "partRequestInsufficientStock": "Not enough stock to approve this request.",
+      "partRequestLocked": "Approved requests must be reverted before changing item or quantity.",
+      "partRequestDeleteConfirm": "Delete this part request?",
+      "partRequestDeleted": "Part request deleted.",
       "locationRequired": "Select a location before saving.",
       "saved": "Ticket saved.",
       "updated": "Ticket updated.",
-      "partRequestSaved": "Part request submitted."
+      "partRequestSaved": "Part request submitted.",
+      "partRequestUpdated": "Part request updated."
     },
     "attachments": {
       "deleteTitle": "Delete attachment?",
@@ -820,7 +843,6 @@
   "settings": {
     "title": "Settings",
     "subtitle": "Configure taxes, locations, and system defaults.",
-    "placeholder": "Placeholder for configuration panels and user preferences.",
     "general": {
       "title": "General Settings"
     },
@@ -844,6 +866,18 @@
     },
     "messages": {
       "saved": "Settings saved."
+    },
+    "reset": {
+      "title": "Testing reset",
+      "description": "This wipes all inventory, sales, maintenance, and related data. Categories, locations, units, and settings stay so you can keep working. Users remain so you can log back in. Remove this feature after testing.",
+      "confirmLabel": "Type confirmation",
+      "confirmPlaceholder": "Type RESET_ALL_DATA",
+      "confirmHelper": "This action cannot be undone.",
+      "action": "Reset all data",
+      "success": "All data removed. Reloaded fresh data for testing.",
+      "invalidConfirm": "Confirmation text is required to reset data.",
+      "forbidden": "Only admins can reset data.",
+      "failed": "Failed to reset data."
     }
   },
   "lang": {

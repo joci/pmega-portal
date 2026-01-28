@@ -147,11 +147,17 @@ export const useSettingsStore = defineStore('settings', () => {
     return settings.value.find((entry) => entry.setting_key === key)
   }
 
+  const reset = () => {
+    settings.value = []
+    isLoaded.value = false
+  }
+
   return {
     settings,
     isLoaded,
     loadAll,
     upsertSetting,
-    getSetting
+    getSetting,
+    reset
   }
 })

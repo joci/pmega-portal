@@ -94,6 +94,15 @@
 
         <div class="grid gap-4 md:grid-cols-2">
           <div>
+            <label class="text-xs font-semibold uppercase text-slate-500">{{ t('sales.fields.employeeName') }}</label>
+            <input
+              v-model="saleForm.performed_by"
+              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :disabled="!canCreateSales || isEditLocked || !isAdmin"
+              required
+            />
+          </div>
+          <div>
             <label class="text-xs font-semibold uppercase text-slate-500">{{ t('sales.fields.location') }}</label>
             <select
               v-model="saleForm.location_id"
@@ -396,6 +405,7 @@ const saleForm = useState('sales-form', () => ({
   payment_status: 'PAID' as const,
   payment_method: '',
   receipt_number: '',
+  performed_by: '',
   location_id: '',
   customer_id: '',
   customer_name: '',
@@ -428,8 +438,23 @@ const editingSaleId = computed(() => (typeof route.query.sale === 'string' ? rou
 const isEditing = computed(() => Boolean(editingSaleId.value))
 const editingSale = computed(() => store.sales.find((entry) => entry.sale_id === editingSaleId.value))
 const isAdmin = computed(() => user.value?.role === 'admin')
+const defaultEmployeeName = computed(() => user.value?.name || user.value?.username || user.value?.email || '')
 const isEditLocked = computed(() => isEditing.value && editingSale.value?.status === 'COMPLETED' && !isAdmin.value)
 const lineItemsLocked = computed(() => isEditLocked.value)
+
+watch(
+  defaultEmployeeName,
+  (value) => {
+    if (!isEditing.value && !isAdmin.value) {
+      saleForm.value.performed_by = value
+      return
+    }
+    if (!saleForm.value.performed_by) {
+      saleForm.value.performed_by = value
+    }
+  },
+  { immediate: true }
+)
 
 const itemsById = computed(() => new Map(inventoryStore.items.map((entry) => [entry.item_id, entry])))
 
@@ -806,6 +831,7 @@ const resetForm = () => {
   saleForm.value.payment_status = 'PAID'
   saleForm.value.payment_method = ''
   saleForm.value.receipt_number = ''
+  saleForm.value.performed_by = defaultEmployeeName.value
   saleForm.value.location_id = ''
   saleForm.value.customer_id = ''
   saleForm.value.customer_name = ''
@@ -835,6 +861,7 @@ const loadSaleForEdit = () => {
   saleForm.value.payment_status = sale.payment_status
   saleForm.value.payment_method = sale.payment_method ?? ''
   saleForm.value.receipt_number = sale.receipt_number ?? ''
+  saleForm.value.performed_by = sale.performed_by ?? ''
   saleForm.value.location_id = sale.location_id
   saleForm.value.customer_id = sale.customer_id ?? ''
   saleForm.value.customer_name = sale.customer_name ?? ''
@@ -915,6 +942,10 @@ const handleSubmit = async () => {
     formMessage.value = { type: 'red', text: t('sales.messages.receiptRequired') }
     return
   }
+  if (!saleForm.value.performed_by?.trim()) {
+    formMessage.value = { type: 'red', text: t('sales.messages.employeeRequired') }
+    return
+  }
   if (!saleForm.value.payment_method) {
     formMessage.value = { type: 'red', text: t('sales.messages.paymentMethodRequired') }
     return
@@ -963,6 +994,7 @@ const handleSubmit = async () => {
       payment_status: saleForm.value.payment_status,
       payment_method: saleForm.value.payment_method,
       receipt_number: saleForm.value.receipt_number.trim(),
+      performed_by: saleForm.value.performed_by?.trim() || null,
       customer_id: saleForm.value.customer_id || null,
       customer_name: saleForm.value.customer_name || null,
       customer_phone: saleForm.value.customer_phone || null,
@@ -1059,6 +1091,9 @@ onMounted(async () => {
       } catch (error) {
         console.warn('Failed to restore sales draft', error)
       }
+    }
+    if (!isAdmin.value) {
+      saleForm.value.performed_by = defaultEmployeeName.value
     }
     lineItems.value.forEach(syncLineItemQuery)
   }

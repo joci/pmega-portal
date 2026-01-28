@@ -29,11 +29,18 @@ export const usePermissions = () => {
 
   const can = (key: PermissionKey) => permissions.value.includes(key)
 
+  const resetPermissions = () => {
+    permissions.value = []
+    role.value = ''
+    isLoaded.value = false
+  }
+
   return {
     permissions,
     role,
     isLoaded,
     loadPermissions,
-    can
+    can,
+    resetPermissions
   }
 }

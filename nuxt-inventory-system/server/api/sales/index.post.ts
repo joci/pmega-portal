@@ -29,10 +29,10 @@ export default defineEventHandler(async (event) => {
   const saleDate = saleData.sale_date ? new Date(String(saleData.sale_date)) : new Date()
   const receiptNumber = saleData.receipt_number ? String(saleData.receipt_number).trim() : ''
   const paymentMethod = saleData.payment_method ? String(saleData.payment_method) : ''
-  const performedBy =
-    typeof saleData.performed_by === 'string' && saleData.performed_by.trim()
-      ? String(saleData.performed_by).trim()
-      : user.name || user.username
+  const requestedEmployee =
+    typeof saleData.performed_by === 'string' ? String(saleData.performed_by).trim() : ''
+  const fallbackEmployee = user.name || user.username || user.email || ''
+  const performedBy = user.role === 'admin' && requestedEmployee ? requestedEmployee : fallbackEmployee
 
   if (!receiptNumber) {
     throw createError({ statusCode: 400, statusMessage: 'RECEIPT_NUMBER_REQUIRED' })

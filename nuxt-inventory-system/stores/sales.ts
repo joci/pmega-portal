@@ -146,6 +146,14 @@ export const useSalesStore = defineStore('sales', () => {
     }
   }
 
+  const reset = () => {
+    sales.value = []
+    saleItems.value = []
+    payments.value = []
+    attachments.value = []
+    isLoaded.value = false
+  }
+
   return {
     sales,
     saleItems,
@@ -154,6 +162,7 @@ export const useSalesStore = defineStore('sales', () => {
     isLoaded,
     loadAll,
     createSale,
-    updateSale
+    updateSale,
+    reset
   }
 })

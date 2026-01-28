@@ -55,6 +55,7 @@
       "priceUpdatedAt": "ዋጋ የተዘመነበት",
       "priceUpdatedAtEmpty": "አልተመዘገበም",
       "unit": "መለኪያ",
+      "employeeName": "የሰራተኛ ስም",
       "manufacturer": "አምራች",
       "barcode": "ባርኮድ",
       "weight": "ክብደት (ኪ.ግ)",
@@ -96,6 +97,7 @@
       "vatRate": "የቫት መጠን: {rate}%",
       "fields": {
         "date": "ቀን",
+        "employeeName": "የሰራተኛ ስም",
         "itemName": "የእቃ ስም",
         "model": "ሞዴል",
         "unit": "መለኪያ",
@@ -132,6 +134,7 @@
         "itemNameRequired": "የእቃ ስም አስፈላጊ ነው።",
         "modelRequired": "ሞዴል አስፈላጊ ነው።",
         "unitRequired": "መለኪያ አስፈላጊ ነው።",
+        "employeeRequired": "የሰራተኛ ስም አስፈላጊ ነው።",
         "quantityRequired": "ብዛት ከ 0 በላይ መሆን አለበት።",
         "unitCostNonNegative": "የአንድ ወጪ 0 ወይም ከዚያ በላይ መሆን አለበት።",
         "cannotEditAdded": "ይህ መዝገብ ቀድሞ ወደ እቃ መዝገብ ተጨምሯል። መቀየር አይቻልም።",
@@ -215,6 +218,7 @@
       "nameRequired": "ስም ያስፈልጋል።",
       "modelRequired": "ሞዴል ያስፈልጋል።",
       "unitRequired": "መለኪያ ያስፈልጋል።",
+      "employeeRequired": "የሰራተኛ ስም ያስፈልጋል።",
       "typeRequired": "አይነት ያስፈልጋል።",
       "categoryRequired": "ምድብ ያስፈልጋል።",
       "locationRequired": "ቦታ ያስፈልጋል።",
@@ -225,6 +229,7 @@
       "minStockNonNegative": "ዝቅተኛ መጠን 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "reorderNonNegative": "የእንደገና ግዢ ብዛት 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "receiptDateRequired": "እቃ ሲቀበሉ ቀን ያስፈልጋል።",
+      "receiptEmployeeRequired": "እቃ ሲቀበሉ የሰራተኛ ስም ያስፈልጋል።",
       "receiptLocationRequired": "የተቀበለበትን ቦታ ይምረጡ።",
       "unitCostNonNegative": "የአንድ ዋጋ 0 ወይም ከዚያ በላይ መሆን አለበት።",
       "marginNonNegative": "ትርፍ 0 ወይም ከዚያ በላይ መሆን አለበት።",
@@ -342,9 +347,12 @@
         "reference": "ማጣቀሻ",
         "balance": "ቀሪ ብዛት"
       },
+      "summary": {
+        "total": "አጠቃላይ"
+      },
       "types": {
         "receipt": "ተቀበለ",
-        "issue": "ሰጠ",
+      "issue": "ለጥገና ተሰጠ",
         "sale": "ሽያጭ",
         "transferIn": "ወደ ቦታ ግብይት",
         "transferOut": "ከቦታ መውጫ",
@@ -440,6 +448,7 @@
       "paymentMethod": "የክፍያ ዘዴ",
       "receiptNumber": "የስራ ትእዛዝ ደረሰኝ ቁጥር",
       "receiptAttachment": "የደረሰኝ ቅጂ",
+      "employeeName": "የሰራተኛ ስም",
       "location": "ቦታ",
       "customerId": "የደንበኛ መለያ",
       "customerName": "የደንበኛ ስም",
@@ -493,6 +502,7 @@
     },
     "messages": {
       "receiptRequired": "የደረሰኝ ቁጥር ያስፈልጋል።",
+      "employeeRequired": "የሰራተኛ ስም ያስፈልጋል።",
       "paymentMethodRequired": "የክፍያ ዘዴ ያስፈልጋል።",
       "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
       "lineRequired": "ቢያንስ አንድ መስመር ያክሉ።",
@@ -520,6 +530,7 @@
       "lineItemsTitle": "የእቃ መስመሮች",
       "saleNumber": "የሽያጭ ቁጥር",
       "receiptNumber": "የደረሰኝ ቁጥር",
+      "employeeName": "የሰራተኛ ስም",
       "saleDate": "ቀን",
       "saleType": "የሽያጭ አይነት",
       "status": "ሁኔታ",
@@ -571,6 +582,7 @@
       "serial": "ሴሪያል ቁጥር",
       "receiptNumber": "የስራ ትእዛዝ ደረሰኝ ቁጥር",
       "receiptAttachment": "የደረሰኝ ቁጥር (አባሪ)",
+      "employeeName": "የሰራተኛ ስም",
       "attachments": "የቲኬት አባሪዎች",
       "receivedDate": "የተቀበለበት ቀን",
       "targetDeliveryDate": "የታሰበ የመስረከቢያ ቀን",
@@ -591,6 +603,7 @@
       "outWarranty": "ውጭ ዋስትና",
       "extended": "ተራዘመ",
       "selectLocation": "ቦታ ይምረጡ",
+      "selectTechnician": "ቴክኒሺያን ይምረጡ",
       "pending": "በመጠባበቅ",
       "diagnosis": "ምርመራ",
       "waitingParts": "መለዋወጫ በመጠባበቅ",
@@ -693,7 +706,11 @@
         "requestedBy": "ጠያቂ",
         "requestedAt": "የተጠየቀበት ቀን",
         "receipt": "የደረሰኝ ቁጥር",
-        "cost": "ዋጋ / ወጪ"
+        "cost": "ዋጋ / ወጪ",
+        "actions": "እርምጃዎች"
+      },
+      "actions": {
+        "delete": "አጥፋ"
       },
       "totalLabel": "የመለዋወጫ ጠቅላላ ዋጋ"
     },
@@ -701,6 +718,7 @@
       "customerRequired": "የደንበኛ ስም ያስፈልጋል።",
       "deviceRequired": "የእቃ ስም እና ሞዴል ያስፈልጋሉ።",
       "receiptRequired": "የደረሰኝ ቁጥር ያስፈልጋል።",
+      "employeeRequired": "የሰራተኛ ስም ያስፈልጋል።",
       "receivedDateRequired": "የተቀበለበት ቀን ያስፈልጋል።",
       "deliveredDateRequired": "ቲኬቱን ከመዝጋት በፊት ትክክለኛ የተሰጠበት ቀን ያስፈልጋል።",
       "ticketLocked": "የተጠናቀቁ ቲኬቶች ለማየት ብቻ ናቸው።",
@@ -714,10 +732,15 @@
       "externalCostRequired": "የውጭ ዋጋ 0 በላይ መሆን አለበት።",
       "attachmentTooLarge": "\"{name}\" ከ 5MB በላይ ነው።",
       "attachmentDeleteFailed": "አባሪውን ማስወገድ አልተሳካም።",
+      "partRequestInsufficientStock": "ይህን ጥያቄ ለማጽደቅ በቂ እቃ የለም።",
+      "partRequestLocked": "ተፈቃዷል ያለ ጥያቄ ዕቃ/ብዛት ለመቀየር መጀመሪያ መመለስ አለበት።",
+      "partRequestDeleteConfirm": "ይህን የመለዋወጫ ጥያቄ ልንሰርዝ?",
+      "partRequestDeleted": "የመለዋወጫ ጥያቄ ተሰርዟል።",
       "locationRequired": "ከመቀመጥ በፊት ቦታ ይምረጡ።",
       "saved": "ቲኬት ተቀምጧል።",
       "updated": "ቲኬት ተዘምኗል።",
-      "partRequestSaved": "የመለዋወጫ ጥያቄ ተላክ።"
+      "partRequestSaved": "የመለዋወጫ ጥያቄ ተላክ።",
+      "partRequestUpdated": "የመለዋወጫ ጥያቄ ተዘምኗል።"
     },
     "attachments": {
       "deleteTitle": "አባሪውን ማጥፋት?",
@@ -821,7 +844,6 @@
   "settings": {
     "title": "ቅንብሮች",
     "subtitle": "ግብር፣ ቦታዎች እና የስርዓት ቅንብሮችን ያዘጋጁ።",
-    "placeholder": "የቅንብር ፓነሎች እና የተጠቃሚ ምርጫዎች እዚህ ይመጣሉ።",
     "general": {
       "title": "አጠቃላይ ቅንብሮች"
     },
@@ -845,6 +867,18 @@
     },
     "messages": {
       "saved": "ቅንብሮች ተቀምጠዋል።"
+    },
+    "reset": {
+      "title": "የሙከራ ማጥፊያ",
+      "description": "የእቃ፣ የሽያጭ፣ የጥገና እና ተያያዥ መረጃዎችን ሁሉ ይሰርዛል። ምድቦች፣ ቦታዎች፣ መለኪያ አካላት እና ቅንብሮች ይቀራሉ። ተጠቃሚዎች እንዲገቡ ተቀምጠው ይቆያሉ። ይህን ባህሪ ከሙከራ በኋላ አስወግዱ።",
+      "confirmLabel": "ማረጋገጫ ይጻፉ",
+      "confirmPlaceholder": "RESET_ALL_DATA ይጻፉ",
+      "confirmHelper": "ይህ እርምጃ መመለስ አይቻልም።",
+      "action": "ሁሉንም መረጃ ያጥፉ",
+      "success": "ሁሉም መረጃ ተሰርዟል። ለሙከራ እንደገና ተጭኗል።",
+      "invalidConfirm": "መረጃ ለማጥፋት የማረጋገጫ ጽሑፍ ያስፈልጋል።",
+      "forbidden": "መረጃ ማጥፋት የሚችሉት አስተዳዳሪዎች ብቻ ናቸው።",
+      "failed": "መረጃ ማጥፋት አልተሳካም።"
     }
   },
   "lang": {

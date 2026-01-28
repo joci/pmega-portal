@@ -16,6 +16,11 @@ export default defineEventHandler(async (event) => {
   if (!existingItem) {
     throw createError({ statusCode: 404, statusMessage: 'ITEM_NOT_FOUND' })
   }
+  const canEditEmployee = user.role === 'admin'
+  const hasEmployee = Object.prototype.hasOwnProperty.call(body ?? {}, 'employee_name')
+  const requestedEmployee = typeof body?.employee_name === 'string' ? body.employee_name.trim() : ''
+  const nextEmployee =
+    canEditEmployee && hasEmployee ? (requestedEmployee ? requestedEmployee : null) : existingItem.employee_name ?? null
   const hasCostSheetEntryId = Object.prototype.hasOwnProperty.call(body ?? {}, 'cost_sheet_entry_id')
   let costSheetEntryId = existingItem.cost_sheet_entry_id ?? null
   if (hasCostSheetEntryId) {
@@ -137,6 +142,7 @@ export default defineEventHandler(async (event) => {
       manufacturer: body.manufacturer ?? null,
       warranty_period: body.warranty_period ?? null,
       unit: nextUnit,
+      employee_name: nextEmployee,
       pricing_mode: pricingMode,
       margin_percent: body.margin_percent ?? existingItem.margin_percent ?? null,
       price_override_reason: overrideReason !== undefined ? overrideReason || null : undefined,

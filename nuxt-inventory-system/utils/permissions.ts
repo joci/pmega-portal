@@ -28,34 +28,25 @@ export type RoleKey =
   | 'technician'
   | 'sales'
   | 'maintenance_receiver'
+  | 'maintenance'
 
 export const rolePermissions: Record<RoleKey, PermissionKey[]> = {
   admin: [...permissionList],
   manager: [
-    'settings.view',
-    'settings.edit',
-    'settings.field.tax_rate.view',
     'inventory.view',
     'inventory.edit',
     'inventory.field.price.view',
     'inventory.field.price.edit',
-    'inventory.field.cost.view',
     'inventory.cost_sheet.remove',
-    'sales.view',
-    'sales.create',
-    'maintenance.view',
-    'maintenance.edit',
-    'maintenance.parts.request',
-    'maintenance.parts.use'
+    'inventory.locations.manage'
   ],
   staff: [
-    'settings.view',
     'inventory.view',
     'inventory.edit',
     'inventory.field.price.view',
-    'sales.view',
-    'sales.create',
-    'maintenance.view'
+    'inventory.field.price.edit',
+    'inventory.cost_sheet.remove',
+    'inventory.locations.manage'
   ],
   viewer: ['inventory.view'],
   technician: [
@@ -65,13 +56,21 @@ export const rolePermissions: Record<RoleKey, PermissionKey[]> = {
     'maintenance.parts.request',
     'maintenance.parts.use'
   ],
-  sales: ['inventory.view', 'sales.view', 'sales.create', 'maintenance.view'],
+  sales: [
+    'inventory.view',
+    'inventory.edit',
+    'sales.view',
+    'sales.create',
+    'maintenance.view',
+    'maintenance.edit'
+  ],
   maintenance_receiver: [
     'inventory.view',
+    'inventory.edit',
     'maintenance.view',
-    'maintenance.edit',
-    'maintenance.parts.request'
-  ]
+    'maintenance.edit'
+  ],
+  maintenance: ['maintenance.view', 'maintenance.parts.request']
 }
 
 export const getRolePermissions = (role: string) => {

@@ -46,7 +46,7 @@
         </div>
 
         <div class="flex justify-end">
-          <UButton type="submit" color="primary" :loading="isSubmitting">
+          <UButton type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
             {{ t('account.actions.updatePassword') }}
           </UButton>
         </div>
@@ -66,41 +66,40 @@ const form = reactive({
   confirmPassword: ''
 })
 
-const isSubmitting = ref(false)
+const { isSubmitting, runWithLock } = useSubmitLock()
 const message = ref('')
 const successMessage = ref('')
 
 const handleSubmit = async () => {
-  message.value = ''
-  successMessage.value = ''
+  await runWithLock(async () => {
+    message.value = ''
+    successMessage.value = ''
 
-  if (form.newPassword !== form.confirmPassword) {
-    message.value = t('account.messages.passwordMismatch')
-    return
-  }
-
-  isSubmitting.value = true
-  try {
-    await $fetch('/api/auth/password', {
-      method: 'POST',
-      body: {
-        current_password: form.currentPassword,
-        new_password: form.newPassword
-      }
-    })
-    successMessage.value = t('account.messages.updated')
-    form.currentPassword = ''
-    form.newPassword = ''
-    form.confirmPassword = ''
-  } catch (error: any) {
-    const status = error?.data?.statusMessage
-    if (status === 'PASSWORD_INVALID') {
-      message.value = t('account.messages.currentInvalid')
-    } else {
-      message.value = t('account.messages.updateFailed')
+    if (form.newPassword !== form.confirmPassword) {
+      message.value = t('account.messages.passwordMismatch')
+      return
     }
-  } finally {
-    isSubmitting.value = false
-  }
+
+    try {
+      await $fetch('/api/auth/password', {
+        method: 'POST',
+        body: {
+          current_password: form.currentPassword,
+          new_password: form.newPassword
+        }
+      })
+      successMessage.value = t('account.messages.updated')
+      form.currentPassword = ''
+      form.newPassword = ''
+      form.confirmPassword = ''
+    } catch (error: any) {
+      const status = error?.data?.statusMessage
+      if (status === 'PASSWORD_INVALID') {
+        message.value = t('account.messages.currentInvalid')
+      } else {
+        message.value = t('account.messages.updateFailed')
+      }
+    }
+  })
 }
 </script>

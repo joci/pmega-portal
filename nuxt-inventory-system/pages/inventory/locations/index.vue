@@ -91,7 +91,7 @@
             </select>
           </div>
           <div class="flex flex-wrap gap-3 pt-2">
-            <UButton type="submit" color="primary">
+            <UButton type="submit" color="primary" :loading="isCreating" :disabled="isCreating">
               {{ t('inventory.locations.actions.create') }}
             </UButton>
             <UButton type="button" color="gray" variant="outline" @click="resetNewForm">
@@ -224,7 +224,7 @@
                 />
               </div>
               <div class="mt-4 flex flex-wrap gap-3">
-                <UButton size="xs" color="primary" @click="saveEdit(location)">
+                <UButton size="xs" color="primary" :loading="isSavingEdit" :disabled="isSavingEdit" @click="saveEdit(location)">
                   {{ t('inventory.locations.actions.update') }}
                 </UButton>
                 <UButton size="xs" color="gray" variant="outline" @click="cancelEdit">
@@ -267,6 +267,7 @@ const newLocation = ref<LocationInput>({
   po_box: ''
 })
 const newLocationError = ref('')
+const { isSubmitting: isCreating, runWithLock: withCreateLock } = useSubmitLock()
 
 const editingLocationId = ref<string | null>(null)
 const editForm = ref<LocationInput>({
@@ -279,6 +280,7 @@ const editForm = ref<LocationInput>({
   po_box: ''
 })
 const editLocationError = ref('')
+const { isSubmitting: isSavingEdit, runWithLock: withEditLock } = useSubmitLock()
 
 const orderedLocations = computed(() =>
   [...store.locations].sort((a, b) => a.name.localeCompare(b.name))
@@ -361,25 +363,27 @@ const resetNewForm = () => {
 }
 
 const handleCreate = async () => {
-  if (!canManageLocations.value) {
-    newLocationError.value = t('permissions.restricted')
-    return
-  }
-  const trimmed = newLocation.value.name.trim()
-  if (!trimmed) {
-    newLocationError.value = t('inventory.locations.messages.nameRequired')
-    return
-  }
-  await store.createLocation({
-    name: trimmed,
-    location_type: newLocation.value.location_type,
-    sub_city: newLocation.value.sub_city?.trim() || null,
-    house_no: newLocation.value.house_no?.trim() || null,
-    city: newLocation.value.city?.trim() || null,
-    country: newLocation.value.country?.trim() || null,
-    po_box: newLocation.value.po_box?.trim() || null
+  await withCreateLock(async () => {
+    if (!canManageLocations.value) {
+      newLocationError.value = t('permissions.restricted')
+      return
+    }
+    const trimmed = newLocation.value.name.trim()
+    if (!trimmed) {
+      newLocationError.value = t('inventory.locations.messages.nameRequired')
+      return
+    }
+    await store.createLocation({
+      name: trimmed,
+      location_type: newLocation.value.location_type,
+      sub_city: newLocation.value.sub_city?.trim() || null,
+      house_no: newLocation.value.house_no?.trim() || null,
+      city: newLocation.value.city?.trim() || null,
+      country: newLocation.value.country?.trim() || null,
+      po_box: newLocation.value.po_box?.trim() || null
+    })
+    resetNewForm()
   })
-  resetNewForm()
 }
 
 const startEdit = (location: Location) => {
@@ -414,26 +418,28 @@ const cancelEdit = () => {
 }
 
 const saveEdit = async (location: Location) => {
-  if (!canManageLocations.value) {
-    editLocationError.value = t('permissions.restricted')
-    return
-  }
-  const trimmed = editForm.value.name.trim()
-  if (!trimmed) {
-    editLocationError.value = t('inventory.locations.messages.nameRequired')
-    return
-  }
-  await store.updateLocation({
-    ...location,
-    name: trimmed,
-    location_type: editForm.value.location_type,
-    sub_city: editForm.value.sub_city?.trim() || null,
-    house_no: editForm.value.house_no?.trim() || null,
-    city: editForm.value.city?.trim() || null,
-    country: editForm.value.country?.trim() || null,
-    po_box: editForm.value.po_box?.trim() || null
+  await withEditLock(async () => {
+    if (!canManageLocations.value) {
+      editLocationError.value = t('permissions.restricted')
+      return
+    }
+    const trimmed = editForm.value.name.trim()
+    if (!trimmed) {
+      editLocationError.value = t('inventory.locations.messages.nameRequired')
+      return
+    }
+    await store.updateLocation({
+      ...location,
+      name: trimmed,
+      location_type: editForm.value.location_type,
+      sub_city: editForm.value.sub_city?.trim() || null,
+      house_no: editForm.value.house_no?.trim() || null,
+      city: editForm.value.city?.trim() || null,
+      country: editForm.value.country?.trim() || null,
+      po_box: editForm.value.po_box?.trim() || null
+    })
+    cancelEdit()
   })
-  cancelEdit()
 }
 
 const removeLocation = async (locationId: string) => {

@@ -163,7 +163,13 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <UButton type="submit" color="primary" size="sm" :disabled="!canEditInventory">
+        <UButton
+          type="submit"
+          color="primary"
+          size="sm"
+          :loading="isSubmitting"
+          :disabled="isSubmitting || !canEditInventory"
+        >
           {{ t('inventory.transfers.actions.submit') }}
         </UButton>
         <UButton type="button" size="sm" color="gray" variant="outline" @click="resetForm">
@@ -200,6 +206,7 @@ const { user } = useAuth()
 const canEditInventory = computed(() => can('inventory.edit'))
 const isAdmin = computed(() => user.value?.role === 'admin')
 const defaultEmployeeName = computed(() => user.value?.name || user.value?.username || user.value?.email || '')
+const { isSubmitting, runWithLock } = useSubmitLock()
 
 const transferForm = reactive({
   item_id: '',
@@ -299,72 +306,74 @@ const clearAttachment = () => {
 }
 
 const handleSubmit = async () => {
-  formErrors.value = []
-  submitError.value = ''
+  await runWithLock(async () => {
+    formErrors.value = []
+    submitError.value = ''
 
-  if (!transferForm.item_id) {
-    formErrors.value.push(t('inventory.transfers.validation.itemRequired'))
-  }
-  if (!transferForm.from_location_id) {
-    formErrors.value.push(t('inventory.transfers.validation.fromLocationRequired'))
-  }
-  if (!transferForm.to_location_id) {
-    formErrors.value.push(t('inventory.transfers.validation.toLocationRequired'))
-  }
-  if (
-    transferForm.from_location_id &&
-    transferForm.to_location_id &&
-    transferForm.from_location_id === transferForm.to_location_id
-  ) {
-    formErrors.value.push(t('inventory.transfers.validation.locationsDifferent'))
-  }
-  if (!transferForm.quantity || transferForm.quantity <= 0) {
-    formErrors.value.push(t('inventory.transfers.validation.quantityRequired'))
-  }
-  if (availableAtSource.value !== null && transferForm.quantity > availableAtSource.value) {
-    formErrors.value.push(t('inventory.transfers.validation.insufficientStock'))
-  }
-  if (!transferForm.employee_name.trim()) {
-    formErrors.value.push(t('inventory.transfers.validation.employeeRequired'))
-  }
-
-  if (formErrors.value.length) {
-    return
-  }
-
-  try {
-    await store.transferStock({
-      item_id: transferForm.item_id,
-      from_location_id: transferForm.from_location_id,
-      to_location_id: transferForm.to_location_id,
-      quantity: transferForm.quantity,
-      transferred_at: transferForm.transferred_at,
-      reference: transferForm.reference?.trim() || null,
-      notes: transferForm.notes?.trim() || null,
-      employee_name: transferForm.employee_name.trim(),
-      attachment_data_url: transferForm.attachment_data_url || null,
-      attachment_file_name: transferForm.attachment_file_name || null,
-      attachment_file_type: transferForm.attachment_file_type || null,
-      attachment_file_size: transferForm.attachment_file_size || null
-    })
-    setFlashMessage({ text: t('inventory.transfers.messages.success'), type: 'green' })
-    if (props.redirectTo) {
-      await navigateTo(localePath(props.redirectTo))
-    } else {
-      resetForm()
+    if (!transferForm.item_id) {
+      formErrors.value.push(t('inventory.transfers.validation.itemRequired'))
     }
-  } catch (error: any) {
-    const status = error?.data?.statusMessage
-    if (status === 'INSUFFICIENT_STOCK') {
-      submitError.value = t('inventory.transfers.validation.insufficientStock')
-    } else if (status === 'TRANSFER_EMPLOYEE_REQUIRED') {
-      submitError.value = t('inventory.transfers.validation.employeeRequired')
-    } else if (status === 'TRANSFER_ATTACHMENT_TOO_LARGE') {
-      submitError.value = t('inventory.transfers.validation.attachmentTooLarge')
-    } else {
-      submitError.value = t('inventory.validation.saveFailed')
+    if (!transferForm.from_location_id) {
+      formErrors.value.push(t('inventory.transfers.validation.fromLocationRequired'))
     }
-  }
+    if (!transferForm.to_location_id) {
+      formErrors.value.push(t('inventory.transfers.validation.toLocationRequired'))
+    }
+    if (
+      transferForm.from_location_id &&
+      transferForm.to_location_id &&
+      transferForm.from_location_id === transferForm.to_location_id
+    ) {
+      formErrors.value.push(t('inventory.transfers.validation.locationsDifferent'))
+    }
+    if (!transferForm.quantity || transferForm.quantity <= 0) {
+      formErrors.value.push(t('inventory.transfers.validation.quantityRequired'))
+    }
+    if (availableAtSource.value !== null && transferForm.quantity > availableAtSource.value) {
+      formErrors.value.push(t('inventory.transfers.validation.insufficientStock'))
+    }
+    if (!transferForm.employee_name.trim()) {
+      formErrors.value.push(t('inventory.transfers.validation.employeeRequired'))
+    }
+
+    if (formErrors.value.length) {
+      return
+    }
+
+    try {
+      await store.transferStock({
+        item_id: transferForm.item_id,
+        from_location_id: transferForm.from_location_id,
+        to_location_id: transferForm.to_location_id,
+        quantity: transferForm.quantity,
+        transferred_at: transferForm.transferred_at,
+        reference: transferForm.reference?.trim() || null,
+        notes: transferForm.notes?.trim() || null,
+        employee_name: transferForm.employee_name.trim(),
+        attachment_data_url: transferForm.attachment_data_url || null,
+        attachment_file_name: transferForm.attachment_file_name || null,
+        attachment_file_type: transferForm.attachment_file_type || null,
+        attachment_file_size: transferForm.attachment_file_size || null
+      })
+      setFlashMessage({ text: t('inventory.transfers.messages.success'), type: 'green' })
+      if (props.redirectTo) {
+        await navigateTo(localePath(props.redirectTo))
+      } else {
+        resetForm()
+      }
+    } catch (error: any) {
+      const status = error?.data?.statusMessage
+      if (status === 'INSUFFICIENT_STOCK') {
+        submitError.value = t('inventory.transfers.validation.insufficientStock')
+      } else if (status === 'TRANSFER_EMPLOYEE_REQUIRED') {
+        submitError.value = t('inventory.transfers.validation.employeeRequired')
+      } else if (status === 'TRANSFER_ATTACHMENT_TOO_LARGE') {
+        submitError.value = t('inventory.transfers.validation.attachmentTooLarge')
+      } else {
+        submitError.value = t('inventory.validation.saveFailed')
+      }
+    }
+  })
 }
 
 onMounted(async () => {

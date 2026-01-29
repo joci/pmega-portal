@@ -355,7 +355,12 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <UButton type="submit" color="primary" :disabled="!canCreateSales || isEditLocked">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="isSubmitting"
+            :disabled="isSubmitting || !canCreateSales || isEditLocked"
+          >
             {{ t('sales.actions.save') }}
           </UButton>
           <UButton type="button" color="gray" variant="outline" @click="resetForm">
@@ -429,6 +434,7 @@ const saleAttachments = ref<
 >([])
 const attachmentErrors = ref<string[]>([])
 const formMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
+const { isSubmitting, runWithLock } = useSubmitLock()
 const storageKeyForm = 'omega.sales.form'
 const storageKeyLines = 'omega.sales.lines'
 const maxItemMatches = 12
@@ -933,120 +939,123 @@ const removeAttachment = (tempId: string) => {
 }
 
 const handleSubmit = async () => {
-  formMessage.value = null
-  if (isEditLocked.value) {
-    formMessage.value = { type: 'red', text: t('sales.messages.locked') }
-    return
-  }
-  if (!saleForm.value.receipt_number.trim()) {
-    formMessage.value = { type: 'red', text: t('sales.messages.receiptRequired') }
-    return
-  }
-  if (!saleForm.value.performed_by?.trim()) {
-    formMessage.value = { type: 'red', text: t('sales.messages.employeeRequired') }
-    return
-  }
-  if (!saleForm.value.payment_method) {
-    formMessage.value = { type: 'red', text: t('sales.messages.paymentMethodRequired') }
-    return
-  }
-  if (!saleForm.value.location_id) {
-    formMessage.value = { type: 'red', text: t('sales.messages.locationRequired') }
-    return
-  }
-  if (lineItems.value.length === 0) {
-    formMessage.value = { type: 'red', text: t('sales.messages.lineRequired') }
-    return
-  }
-  if (!isDiscountEnabled.value && saleForm.value.discount_amount > 0) {
-    formMessage.value = { type: 'red', text: t('sales.messages.discountNotAllowed') }
-    return
-  }
+  await runWithLock(async () => {
+    formMessage.value = null
 
-  const normalizedItems: SaleItem[] = lineItems.value.map((line) => ({
-    sale_item_id: line.tempId,
-    sale_id: '',
-    item_id: line.item_id || null,
-    description: line.description || null,
-    line_type: line.line_type,
-    quantity: line.quantity,
-    unit_price: line.unit_price,
-    discount_amount: 0,
-    tax_amount: 0,
-    line_total: lineTotal(line),
-    affects_inventory: ['PRODUCT', 'SPARE_PART'].includes(line.line_type) && Boolean(line.item_id)
-  }))
-
-  try {
-    const attachmentsPayload: SaleAttachment[] = saleAttachments.value.map((attachment) => ({
-      attachment_id: '',
-      sale_id: '',
-      file_name: attachment.file_name,
-      file_type: attachment.file_type,
-      file_size: attachment.file_size,
-      data_url: attachment.data_url
-    }))
-
-    const salePayload = {
-      sale_id: isEditing.value ? editingSaleId.value : undefined,
-      sale_type: saleForm.value.sale_type,
-      status: saleForm.value.status,
-      payment_status: saleForm.value.payment_status,
-      payment_method: saleForm.value.payment_method,
-      receipt_number: saleForm.value.receipt_number.trim(),
-      performed_by: saleForm.value.performed_by?.trim() || null,
-      customer_id: saleForm.value.customer_id || null,
-      customer_name: saleForm.value.customer_name || null,
-      customer_phone: saleForm.value.customer_phone || null,
-      customer_tin: saleForm.value.customer_tin || null,
-      customer_vat_registration_no: saleForm.value.customer_vat_registration_no || null,
-      ...supplierMeta.value,
-      discount_amount: effectiveDiscount.value,
-      tax_amount: vatAmount.value,
-      subtotal_amount: lineSubtotal.value,
-      total_amount: grandTotal.value,
-      is_repair_service: false,
-      location_id: saleForm.value.location_id,
-      notes: saleForm.value.notes
-    }
-
-    if (isEditing.value) {
-      await store.updateSale(editingSaleId.value, salePayload, normalizedItems, attachmentsPayload)
-    } else {
-      await store.createSale(salePayload, normalizedItems, attachmentsPayload)
-    }
-  } catch (error: any) {
-    const statusMessage = error?.data?.statusMessage || error?.message
-    if (statusMessage === 'INSUFFICIENT_STOCK') {
-      formMessage.value = { type: 'red', text: t('sales.messages.insufficientStock') }
-      return
-    }
-    if (statusMessage === 'SALE_LOCKED') {
+    if (isEditLocked.value) {
       formMessage.value = { type: 'red', text: t('sales.messages.locked') }
       return
     }
-    if (statusMessage === 'LINE_ITEMS_LOCKED') {
-      formMessage.value = { type: 'red', text: t('sales.messages.lineItemsLocked') }
-      return
-    }
-    if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
+    if (!saleForm.value.receipt_number.trim()) {
       formMessage.value = { type: 'red', text: t('sales.messages.receiptRequired') }
       return
     }
-    if (statusMessage === 'PAYMENT_METHOD_REQUIRED') {
+    if (!saleForm.value.performed_by?.trim()) {
+      formMessage.value = { type: 'red', text: t('sales.messages.employeeRequired') }
+      return
+    }
+    if (!saleForm.value.payment_method) {
       formMessage.value = { type: 'red', text: t('sales.messages.paymentMethodRequired') }
       return
     }
-    if (statusMessage === 'ATTACHMENT_TOO_LARGE') {
-      formMessage.value = { type: 'red', text: t('sales.messages.attachmentTooLarge', { name: '' }) }
+    if (!saleForm.value.location_id) {
+      formMessage.value = { type: 'red', text: t('sales.messages.locationRequired') }
       return
     }
-    throw error
-  }
+    if (lineItems.value.length === 0) {
+      formMessage.value = { type: 'red', text: t('sales.messages.lineRequired') }
+      return
+    }
+    if (!isDiscountEnabled.value && saleForm.value.discount_amount > 0) {
+      formMessage.value = { type: 'red', text: t('sales.messages.discountNotAllowed') }
+      return
+    }
 
-  setFlashMessage({ type: 'primary', text: isEditing.value ? t('sales.messages.updated') : t('sales.messages.saved') })
-  resetForm()
-  await router.push(localePath('/sales'))
+    const normalizedItems: SaleItem[] = lineItems.value.map((line) => ({
+      sale_item_id: line.tempId,
+      sale_id: '',
+      item_id: line.item_id || null,
+      description: line.description || null,
+      line_type: line.line_type,
+      quantity: line.quantity,
+      unit_price: line.unit_price,
+      discount_amount: 0,
+      tax_amount: 0,
+      line_total: lineTotal(line),
+      affects_inventory: ['PRODUCT', 'SPARE_PART'].includes(line.line_type) && Boolean(line.item_id)
+    }))
+
+    try {
+      const attachmentsPayload: SaleAttachment[] = saleAttachments.value.map((attachment) => ({
+        attachment_id: '',
+        sale_id: '',
+        file_name: attachment.file_name,
+        file_type: attachment.file_type,
+        file_size: attachment.file_size,
+        data_url: attachment.data_url
+      }))
+
+      const salePayload = {
+        sale_id: isEditing.value ? editingSaleId.value : undefined,
+        sale_type: saleForm.value.sale_type,
+        status: saleForm.value.status,
+        payment_status: saleForm.value.payment_status,
+        payment_method: saleForm.value.payment_method,
+        receipt_number: saleForm.value.receipt_number.trim(),
+        performed_by: saleForm.value.performed_by?.trim() || null,
+        customer_id: saleForm.value.customer_id || null,
+        customer_name: saleForm.value.customer_name || null,
+        customer_phone: saleForm.value.customer_phone || null,
+        customer_tin: saleForm.value.customer_tin || null,
+        customer_vat_registration_no: saleForm.value.customer_vat_registration_no || null,
+        ...supplierMeta.value,
+        discount_amount: effectiveDiscount.value,
+        tax_amount: vatAmount.value,
+        subtotal_amount: lineSubtotal.value,
+        total_amount: grandTotal.value,
+        is_repair_service: false,
+        location_id: saleForm.value.location_id,
+        notes: saleForm.value.notes
+      }
+
+      if (isEditing.value) {
+        await store.updateSale(editingSaleId.value, salePayload, normalizedItems, attachmentsPayload)
+      } else {
+        await store.createSale(salePayload, normalizedItems, attachmentsPayload)
+      }
+    } catch (error: any) {
+      const statusMessage = error?.data?.statusMessage || error?.message
+      if (statusMessage === 'INSUFFICIENT_STOCK') {
+        formMessage.value = { type: 'red', text: t('sales.messages.insufficientStock') }
+        return
+      }
+      if (statusMessage === 'SALE_LOCKED') {
+        formMessage.value = { type: 'red', text: t('sales.messages.locked') }
+        return
+      }
+      if (statusMessage === 'LINE_ITEMS_LOCKED') {
+        formMessage.value = { type: 'red', text: t('sales.messages.lineItemsLocked') }
+        return
+      }
+      if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('sales.messages.receiptRequired') }
+        return
+      }
+      if (statusMessage === 'PAYMENT_METHOD_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('sales.messages.paymentMethodRequired') }
+        return
+      }
+      if (statusMessage === 'ATTACHMENT_TOO_LARGE') {
+        formMessage.value = { type: 'red', text: t('sales.messages.attachmentTooLarge', { name: '' }) }
+        return
+      }
+      throw error
+    }
+
+    setFlashMessage({ type: 'primary', text: isEditing.value ? t('sales.messages.updated') : t('sales.messages.saved') })
+    resetForm()
+    await router.push(localePath('/sales'))
+  })
 }
 
 onMounted(async () => {

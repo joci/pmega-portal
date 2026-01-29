@@ -74,7 +74,7 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <UButton type="submit" color="primary" :loading="isSubmitting">
+          <UButton type="submit" color="primary" :loading="isSubmitting" :disabled="isSubmitting">
             {{ isBootstrapMode ? t('auth.actions.bootstrap') : t('auth.actions.login') }}
           </UButton>
         </div>
@@ -91,7 +91,7 @@ const localePath = useLocalePath()
 const { login } = useAuth()
 
 const isBootstrapMode = ref(false)
-const isSubmitting = ref(false)
+const { isSubmitting, runWithLock } = useSubmitLock()
 const message = ref('')
 
 const loginForm = reactive({
@@ -119,32 +119,31 @@ const activePassword = computed({
 })
 
 const handleSubmit = async () => {
-  message.value = ''
-  isSubmitting.value = true
-  try {
-    if (isBootstrapMode.value) {
-      if (bootstrapForm.password !== bootstrapForm.confirmPassword) {
-        message.value = t('auth.messages.passwordMismatch')
-        return
-      }
-      await $fetch('/api/auth/bootstrap', {
-        method: 'POST',
-        body: {
-          name: bootstrapForm.name,
-          email: bootstrapForm.email,
-          username: bootstrapForm.username,
-          password: bootstrapForm.password
+  await runWithLock(async () => {
+    message.value = ''
+    try {
+      if (isBootstrapMode.value) {
+        if (bootstrapForm.password !== bootstrapForm.confirmPassword) {
+          message.value = t('auth.messages.passwordMismatch')
+          return
         }
-      })
-    } else {
-      await login(loginForm.identifier, loginForm.password)
+        await $fetch('/api/auth/bootstrap', {
+          method: 'POST',
+          body: {
+            name: bootstrapForm.name,
+            email: bootstrapForm.email,
+            username: bootstrapForm.username,
+            password: bootstrapForm.password
+          }
+        })
+      } else {
+        await login(loginForm.identifier, loginForm.password)
+      }
+      await navigateTo(localePath('/'))
+    } catch (error: any) {
+      message.value = t('auth.messages.loginFailed')
     }
-    await navigateTo(localePath('/'))
-  } catch (error: any) {
-    message.value = t('auth.messages.loginFailed')
-  } finally {
-    isSubmitting.value = false
-  }
+  })
 }
 
 onMounted(async () => {

@@ -57,7 +57,7 @@
             />
           </div>
           <div class="flex items-end">
-            <UButton type="submit" color="primary" :loading="isSaving">
+            <UButton type="submit" color="primary" :loading="isSaving" :disabled="isSaving">
               {{ t('users.actions.create') }}
             </UButton>
           </div>
@@ -106,7 +106,13 @@
                   </select>
                 </td>
                 <td class="py-3 text-right">
-                  <UButton size="xs" color="primary" :loading="savingId === entry.user_id" @click="saveEdit(entry)">
+                  <UButton
+                    size="xs"
+                    color="primary"
+                    :loading="savingId === entry.user_id"
+                    :disabled="savingId === entry.user_id"
+                    @click="saveEdit(entry)"
+                  >
                     {{ t('users.actions.update') }}
                   </UButton>
                   <UButton
@@ -157,7 +163,7 @@
               <UButton color="gray" variant="outline" @click="closeReset">
                 {{ t('users.reset.cancel') }}
               </UButton>
-              <UButton color="primary" :loading="resetSaving" @click="submitReset">
+              <UButton color="primary" :loading="resetSaving" :disabled="resetSaving" @click="submitReset">
                 {{ t('users.reset.submit') }}
               </UButton>
             </div>
@@ -182,10 +188,10 @@ const users = ref<User[]>([])
 const edits = reactive<Record<string, { role: string; is_active: boolean }>>({})
 const message = ref('')
 const successMessage = ref('')
-const isSaving = ref(false)
+const { isSubmitting: isSaving, runWithLock: withCreateLock } = useSubmitLock()
 const savingId = ref<string | null>(null)
 const isResetOpen = ref(false)
-const resetSaving = ref(false)
+const { isSubmitting: resetSaving, runWithLock: withResetLock } = useSubmitLock()
 const resetMessage = ref('')
 const resetUser = ref<User | null>(null)
 
@@ -214,37 +220,39 @@ const loadUsers = async () => {
 }
 
 const createUser = async () => {
-  message.value = ''
-  successMessage.value = ''
-  isSaving.value = true
-  try {
-    const payload = await $fetch<{ user: User }>('/api/users', {
-      method: 'POST',
-      body: {
-        name: newUser.name,
-        email: newUser.email,
-        username: newUser.username,
-        role: newUser.role,
-        password: newUser.password
-      }
-    })
-    users.value = [payload.user, ...users.value]
-    edits[payload.user.user_id] = { role: payload.user.role, is_active: payload.user.is_active }
-    newUser.name = ''
-    newUser.email = ''
-    newUser.username = ''
-    newUser.role = 'staff'
-    newUser.password = ''
-  } catch (error: any) {
-    message.value = t('users.messages.createFailed')
-  } finally {
-    isSaving.value = false
-  }
+  await withCreateLock(async () => {
+    message.value = ''
+    successMessage.value = ''
+    try {
+      const payload = await $fetch<{ user: User }>('/api/users', {
+        method: 'POST',
+        body: {
+          name: newUser.name,
+          email: newUser.email,
+          username: newUser.username,
+          role: newUser.role,
+          password: newUser.password
+        }
+      })
+      users.value = [payload.user, ...users.value]
+      edits[payload.user.user_id] = { role: payload.user.role, is_active: payload.user.is_active }
+      newUser.name = ''
+      newUser.email = ''
+      newUser.username = ''
+      newUser.role = 'staff'
+      newUser.password = ''
+    } catch (error: any) {
+      message.value = t('users.messages.createFailed')
+    }
+  })
 }
 
 const saveEdit = async (entry: User) => {
   message.value = ''
   successMessage.value = ''
+  if (savingId.value === entry.user_id) {
+    return
+  }
   if (!edits[entry.user_id]) {
     return
   }
@@ -289,28 +297,27 @@ const submitReset = async () => {
   if (!resetUser.value) {
     return
   }
-  resetMessage.value = ''
-  if (!resetForm.password || !resetForm.confirmPassword) {
-    resetMessage.value = t('users.reset.passwordRequired')
-    return
-  }
-  if (resetForm.password !== resetForm.confirmPassword) {
-    resetMessage.value = t('users.reset.passwordMismatch')
-    return
-  }
-  resetSaving.value = true
-  try {
-    await $fetch(`/api/users/${resetUser.value.user_id}/password`, {
-      method: 'PUT',
-      body: { new_password: resetForm.password }
-    })
-    successMessage.value = t('users.messages.resetSuccess')
-    closeReset()
-  } catch (error) {
-    resetMessage.value = t('users.messages.resetFailed')
-  } finally {
-    resetSaving.value = false
-  }
+  await withResetLock(async () => {
+    resetMessage.value = ''
+    if (!resetForm.password || !resetForm.confirmPassword) {
+      resetMessage.value = t('users.reset.passwordRequired')
+      return
+    }
+    if (resetForm.password !== resetForm.confirmPassword) {
+      resetMessage.value = t('users.reset.passwordMismatch')
+      return
+    }
+    try {
+      await $fetch(`/api/users/${resetUser.value.user_id}/password`, {
+        method: 'PUT',
+        body: { new_password: resetForm.password }
+      })
+      successMessage.value = t('users.messages.resetSuccess')
+      closeReset()
+    } catch (error) {
+      resetMessage.value = t('users.messages.resetFailed')
+    }
+  })
 }
 
 onMounted(loadUsers)

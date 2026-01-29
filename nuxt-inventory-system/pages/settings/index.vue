@@ -12,7 +12,13 @@
     <div v-else class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold text-slate-900">{{ t('settings.general.title') }}</h2>
-        <UButton size="sm" color="primary" :disabled="!canEditSettings" @click="saveSettings">
+        <UButton
+          size="sm"
+          color="primary"
+          :loading="isSaving"
+          :disabled="isSaving || !canEditSettings"
+          @click="saveSettings"
+        >
           {{ t('settings.actions.save') }}
         </UButton>
       </div>
@@ -176,6 +182,7 @@ const canResetData = computed(() => user.value?.role === 'admin')
 const resetConfirm = ref('')
 const resetMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const isResetting = ref(false)
+const { isSubmitting: isSaving, runWithLock: withSaveLock } = useSubmitLock()
 
 const form = reactive({
   tax_rate: '0.15',
@@ -226,70 +233,72 @@ const loadSettings = () => {
 }
 
 const saveSettings = async () => {
-  message.value = null
-  if (!canEditSettings.value) {
-    message.value = { type: 'red', text: t('permissions.readOnly') }
-    return
-  }
-  await settingsStore.upsertSetting({
-    setting_key: 'tax_rate',
-    setting_value: form.tax_rate,
-    setting_type: 'NUMBER',
-    description: 'Default tax rate'
-  })
-
-  await settingsStore.upsertSetting({
-    setting_key: 'default_margin_percent',
-    setting_value: form.default_margin_percent,
-    setting_type: 'NUMBER',
-    description: 'Default margin percentage for pricing'
-  })
-
-  await settingsStore.upsertSetting({
-    setting_key: 'sales_discounts_enabled',
-    setting_value: form.sales_discounts_enabled,
-    setting_type: 'BOOLEAN',
-    description: 'Enable discounts on sales'
-  })
-
-  if (form.app_location_id) {
+  await withSaveLock(async () => {
+    message.value = null
+    if (!canEditSettings.value) {
+      message.value = { type: 'red', text: t('permissions.readOnly') }
+      return
+    }
     await settingsStore.upsertSetting({
-      setting_key: 'app_location_id',
-      setting_value: form.app_location_id,
-      setting_type: 'STRING',
-      description: 'Current application location id'
+      setting_key: 'tax_rate',
+      setting_value: form.tax_rate,
+      setting_type: 'NUMBER',
+      description: 'Default tax rate'
     })
-  }
 
-  await settingsStore.upsertSetting({
-    setting_key: 'business_name',
-    setting_value: form.business_name,
-    setting_type: 'STRING',
-    description: 'Registered business name'
+    await settingsStore.upsertSetting({
+      setting_key: 'default_margin_percent',
+      setting_value: form.default_margin_percent,
+      setting_type: 'NUMBER',
+      description: 'Default margin percentage for pricing'
+    })
+
+    await settingsStore.upsertSetting({
+      setting_key: 'sales_discounts_enabled',
+      setting_value: form.sales_discounts_enabled,
+      setting_type: 'BOOLEAN',
+      description: 'Enable discounts on sales'
+    })
+
+    if (form.app_location_id) {
+      await settingsStore.upsertSetting({
+        setting_key: 'app_location_id',
+        setting_value: form.app_location_id,
+        setting_type: 'STRING',
+        description: 'Current application location id'
+      })
+    }
+
+    await settingsStore.upsertSetting({
+      setting_key: 'business_name',
+      setting_value: form.business_name,
+      setting_type: 'STRING',
+      description: 'Registered business name'
+    })
+
+    await settingsStore.upsertSetting({
+      setting_key: 'supplier_tin',
+      setting_value: form.supplier_tin,
+      setting_type: 'STRING',
+      description: 'Supplier TIN number'
+    })
+
+    await settingsStore.upsertSetting({
+      setting_key: 'vat_registration_date',
+      setting_value: form.vat_registration_date,
+      setting_type: 'DATE',
+      description: 'VAT registration date'
+    })
+
+    await settingsStore.upsertSetting({
+      setting_key: 'vat_registration_no',
+      setting_value: form.vat_registration_no,
+      setting_type: 'STRING',
+      description: 'Supplier VAT registration number'
+    })
+
+    message.value = { type: 'primary', text: t('settings.messages.saved') }
   })
-
-  await settingsStore.upsertSetting({
-    setting_key: 'supplier_tin',
-    setting_value: form.supplier_tin,
-    setting_type: 'STRING',
-    description: 'Supplier TIN number'
-  })
-
-  await settingsStore.upsertSetting({
-    setting_key: 'vat_registration_date',
-    setting_value: form.vat_registration_date,
-    setting_type: 'DATE',
-    description: 'VAT registration date'
-  })
-
-  await settingsStore.upsertSetting({
-    setting_key: 'vat_registration_no',
-    setting_value: form.vat_registration_no,
-    setting_type: 'STRING',
-    description: 'Supplier VAT registration number'
-  })
-
-  message.value = { type: 'primary', text: t('settings.messages.saved') }
 }
 
 const resetAllData = async () => {

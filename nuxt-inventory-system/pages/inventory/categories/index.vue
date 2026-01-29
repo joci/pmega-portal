@@ -52,7 +52,7 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-3 pt-2">
-            <UButton type="submit" color="primary">
+            <UButton type="submit" color="primary" :loading="isCreating" :disabled="isCreating">
               {{ t('inventory.categories.actions.create') }}
             </UButton>
             <UButton type="button" color="gray" variant="outline" @click="resetNewForm">
@@ -88,7 +88,7 @@
                 </div>
               </div>
               <div class="flex gap-2">
-                <UButton size="xs" color="gray" variant="outline" @click="startEdit(category)">
+                <UButton size="xs" color="gray" variant="outline" :disabled="isSavingEdit" @click="startEdit(category)">
                   {{ t('inventory.categories.actions.edit') }}
                 </UButton>
                 <UButton size="xs" color="red" variant="outline" @click="openDeleteDialog(category)">
@@ -138,7 +138,7 @@
                 />
               </div>
               <div class="mt-4 flex flex-wrap gap-3">
-                <UButton size="xs" color="primary" @click="saveEdit(category)">
+                <UButton size="xs" color="primary" :loading="isSavingEdit" :disabled="isSavingEdit" @click="saveEdit(category)">
                   {{ t('inventory.categories.actions.update') }}
                 </UButton>
                 <UButton size="xs" color="gray" variant="outline" @click="cancelEdit">
@@ -208,6 +208,7 @@ const newCategory = ref<CategoryInput>({
   category_type: 'PRODUCT'
 })
 const newCategoryError = ref('')
+const { isSubmitting: isCreating, runWithLock: withCreateLock } = useSubmitLock()
 
 const editingCategoryId = ref<string | null>(null)
 const editForm = ref<CategoryInput>({
@@ -216,6 +217,7 @@ const editForm = ref<CategoryInput>({
   category_type: 'PRODUCT'
 })
 const editCategoryError = ref('')
+const { isSubmitting: isSavingEdit, runWithLock: withEditLock } = useSubmitLock()
 const isDeleteModalOpen = ref(false)
 const deleteTarget = ref<Category | null>(null)
 const reassignCategoryId = ref('')
@@ -257,16 +259,18 @@ const resetNewForm = () => {
 }
 
 const handleCreate = async () => {
-  if (!newCategory.value.name.trim()) {
-    newCategoryError.value = t('inventory.categories.messages.nameRequired')
-    return
-  }
-  await store.createCategory({
-    name: newCategory.value.name.trim(),
-    description: newCategory.value.description?.trim() || null,
-    category_type: newCategory.value.category_type
+  await withCreateLock(async () => {
+    if (!newCategory.value.name.trim()) {
+      newCategoryError.value = t('inventory.categories.messages.nameRequired')
+      return
+    }
+    await store.createCategory({
+      name: newCategory.value.name.trim(),
+      description: newCategory.value.description?.trim() || null,
+      category_type: newCategory.value.category_type
+    })
+    resetNewForm()
   })
-  resetNewForm()
 }
 
 const startEdit = (category: Category) => {
@@ -286,17 +290,19 @@ const cancelEdit = () => {
 }
 
 const saveEdit = async (category: Category) => {
-  if (!editForm.value.name.trim()) {
-    editCategoryError.value = t('inventory.categories.messages.nameRequired')
-    return
-  }
-  await store.updateCategory({
-    ...category,
-    name: editForm.value.name.trim(),
-    description: editForm.value.description?.trim() || null,
-    category_type: editForm.value.category_type
+  await withEditLock(async () => {
+    if (!editForm.value.name.trim()) {
+      editCategoryError.value = t('inventory.categories.messages.nameRequired')
+      return
+    }
+    await store.updateCategory({
+      ...category,
+      name: editForm.value.name.trim(),
+      description: editForm.value.description?.trim() || null,
+      category_type: editForm.value.category_type
+    })
+    cancelEdit()
   })
-  cancelEdit()
 }
 
 const openDeleteDialog = async (category: Category) => {

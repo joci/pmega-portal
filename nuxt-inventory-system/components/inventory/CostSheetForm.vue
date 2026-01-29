@@ -123,7 +123,12 @@
           </div>
         </div>
         <div class="flex flex-wrap gap-3 pt-2">
-          <UButton type="submit" color="primary" :disabled="!canEditInventory">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="isSubmitting"
+            :disabled="isSubmitting || !canEditInventory"
+          >
             {{ isEditing ? t('inventory.costSheetPage.actions.update') : t('inventory.costSheetPage.actions.create') }}
           </UButton>
           <UButton
@@ -179,6 +184,7 @@ const form = ref<CostSheetEntryInput>({
   unit_cost: 0
 })
 const formError = ref('')
+const { isSubmitting, runWithLock } = useSubmitLock()
 const editingEntryId = ref<string | null>(null)
 const isEditing = computed(() => Boolean(editingEntryId.value))
 const prefillEntryId = computed(() => (typeof route.query.entry === 'string' ? route.query.entry : ''))
@@ -254,73 +260,75 @@ const cancelEdit = async () => {
 }
 
 const handleSubmit = async () => {
-  formError.value = ''
-  if (!canEditInventory.value) {
-    formError.value = t('permissions.restricted')
-    return
-  }
-  if (!form.value.item_name.trim()) {
-    formError.value = t('inventory.costSheetPage.validation.itemNameRequired')
-    return
-  }
-  if (!form.value.entry_date) {
-    formError.value = t('inventory.costSheetPage.validation.dateRequired')
-    return
-  }
-  if (!form.value.model?.trim()) {
-    formError.value = t('inventory.costSheetPage.validation.modelRequired')
-    return
-  }
-  if (!form.value.unit?.trim()) {
-    formError.value = t('inventory.costSheetPage.validation.unitRequired')
-    return
-  }
-  if (!form.value.employee_name?.trim()) {
-    formError.value = t('inventory.costSheetPage.validation.employeeRequired')
-    return
-  }
-  if (form.value.quantity <= 0) {
-    formError.value = t('inventory.costSheetPage.validation.quantityRequired')
-    return
-  }
-  if (form.value.unit_cost < 0) {
-    formError.value = t('inventory.costSheetPage.validation.unitCostNonNegative')
-    return
-  }
+  await runWithLock(async () => {
+    formError.value = ''
+    if (!canEditInventory.value) {
+      formError.value = t('permissions.restricted')
+      return
+    }
+    if (!form.value.item_name.trim()) {
+      formError.value = t('inventory.costSheetPage.validation.itemNameRequired')
+      return
+    }
+    if (!form.value.entry_date) {
+      formError.value = t('inventory.costSheetPage.validation.dateRequired')
+      return
+    }
+    if (!form.value.model?.trim()) {
+      formError.value = t('inventory.costSheetPage.validation.modelRequired')
+      return
+    }
+    if (!form.value.unit?.trim()) {
+      formError.value = t('inventory.costSheetPage.validation.unitRequired')
+      return
+    }
+    if (!form.value.employee_name?.trim()) {
+      formError.value = t('inventory.costSheetPage.validation.employeeRequired')
+      return
+    }
+    if (form.value.quantity <= 0) {
+      formError.value = t('inventory.costSheetPage.validation.quantityRequired')
+      return
+    }
+    if (form.value.unit_cost < 0) {
+      formError.value = t('inventory.costSheetPage.validation.unitCostNonNegative')
+      return
+    }
 
-  try {
-    const payload = {
-      entry_date: form.value.entry_date,
-      item_name: form.value.item_name.trim(),
-      model: form.value.model?.trim() || null,
-      unit: form.value.unit?.trim() || null,
-      employee_name: form.value.employee_name?.trim() || null,
-      quantity: form.value.quantity,
-      unit_cost: form.value.unit_cost
+    try {
+      const payload = {
+        entry_date: form.value.entry_date,
+        item_name: form.value.item_name.trim(),
+        model: form.value.model?.trim() || null,
+        unit: form.value.unit?.trim() || null,
+        employee_name: form.value.employee_name?.trim() || null,
+        quantity: form.value.quantity,
+        unit_cost: form.value.unit_cost
+      }
+      const wasEditing = Boolean(editingEntryId.value)
+      if (editingEntryId.value) {
+        await store.updateCostSheetEntry(editingEntryId.value, payload)
+      } else {
+        await store.createCostSheetEntry(payload)
+      }
+      setFlashMessage({
+        type: 'primary',
+        text: wasEditing
+          ? t('inventory.costSheetPage.messages.updated')
+          : t('inventory.costSheetPage.messages.created')
+      })
+      await router.push(localePath('/inventory/cost-sheet'))
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
+      if (status === 409 && statusMessage === 'COST_SHEET_ALREADY_USED') {
+        formError.value = t('inventory.costSheetPage.validation.cannotEditAdded')
+      } else {
+        formError.value = t('inventory.costSheetPage.validation.saveFailed')
+      }
+      console.warn('Failed to create cost sheet entry', error)
     }
-    const wasEditing = Boolean(editingEntryId.value)
-    if (editingEntryId.value) {
-      await store.updateCostSheetEntry(editingEntryId.value, payload)
-    } else {
-      await store.createCostSheetEntry(payload)
-    }
-    setFlashMessage({
-      type: 'primary',
-      text: wasEditing
-        ? t('inventory.costSheetPage.messages.updated')
-        : t('inventory.costSheetPage.messages.created')
-    })
-    await router.push(localePath('/inventory/cost-sheet'))
-  } catch (error) {
-    const status = (error as { response?: { status?: number } })?.response?.status
-    const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
-    if (status === 409 && statusMessage === 'COST_SHEET_ALREADY_USED') {
-      formError.value = t('inventory.costSheetPage.validation.cannotEditAdded')
-    } else {
-      formError.value = t('inventory.costSheetPage.validation.saveFailed')
-    }
-    console.warn('Failed to create cost sheet entry', error)
-  }
+  })
 }
 
 onMounted(async () => {

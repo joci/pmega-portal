@@ -296,7 +296,12 @@
           </div>
 
           <div class="flex flex-wrap gap-3">
-            <UButton type="submit" color="primary" :disabled="!canRequestParts">
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="isSubmitting"
+              :disabled="isSubmitting || !canRequestParts"
+            >
               {{ t('maintenance.partRequest.submit') }}
             </UButton>
             <UButton type="button" color="gray" variant="outline" @click="resetPartRequestForm">
@@ -433,6 +438,7 @@ const partRequestMode = ref<'internal' | 'external'>('internal')
 const partRequestMessage = ref<{ type: 'primary' | 'red'; text: string } | null>(null)
 const maxPartMatches = 12
 const isPartMenuOpen = ref(false)
+const { isSubmitting, runWithLock } = useSubmitLock()
 const technicians = ref<TechnicianOption[]>([])
 
 const partRequestForm = reactive({
@@ -818,105 +824,107 @@ const syncPartQuery = () => {
 }
 
 const submitPartRequest = async () => {
-  partRequestMessage.value = null
-  if (!canRequestParts.value) {
-    partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
-    return
-  }
-  if (!selectedTicket.value) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestTicketRequired') }
-    return
-  }
-  if (partRequestMode.value === 'internal' && !partRequestForm.part_id) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequired') }
-    return
-  }
-  if (!partRequestForm.requested_by.trim()) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.requestedByRequired') }
-    return
-  }
-  if (!partRequestForm.technician_id.trim()) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.technicianRequired') }
-    return
-  }
-  if (!selectedTicket.value.location_id) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
-    return
-  }
-  if (partRequestForm.quantity_requested <= 0) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partQuantityRequired') }
-    return
-  }
-  if (partRequestMode.value === 'external') {
-    if (!partRequestForm.external_item_name.trim()) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalItemRequired') }
+  await runWithLock(async () => {
+    partRequestMessage.value = null
+    if (!canRequestParts.value) {
+      partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
       return
     }
-    if (!partRequestForm.external_receipt_number.trim()) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalReceiptRequired') }
+    if (!selectedTicket.value) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestTicketRequired') }
       return
     }
-    if (partRequestForm.external_cost <= 0) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalCostRequired') }
+    if (partRequestMode.value === 'internal' && !partRequestForm.part_id) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequired') }
       return
     }
-  }
+    if (!partRequestForm.requested_by.trim()) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.requestedByRequired') }
+      return
+    }
+    if (!partRequestForm.technician_id.trim()) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.technicianRequired') }
+      return
+    }
+    if (!selectedTicket.value.location_id) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
+      return
+    }
+    if (partRequestForm.quantity_requested <= 0) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partQuantityRequired') }
+      return
+    }
+    if (partRequestMode.value === 'external') {
+      if (!partRequestForm.external_item_name.trim()) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalItemRequired') }
+        return
+      }
+      if (!partRequestForm.external_receipt_number.trim()) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalReceiptRequired') }
+        return
+      }
+      if (partRequestForm.external_cost <= 0) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalCostRequired') }
+        return
+      }
+    }
 
-  const isApproved = partRequestForm.status === 'APPROVED' && canApproveParts.value
-  const approvedAt = isApproved ? new Date().toISOString() : null
-  const approvedBy = isApproved ? user.value?.user_id ?? null : null
+    const isApproved = partRequestForm.status === 'APPROVED' && canApproveParts.value
+    const approvedAt = isApproved ? new Date().toISOString() : null
+    const approvedBy = isApproved ? user.value?.user_id ?? null : null
 
-  try {
-    await store.createPartRequest({
-      ticket_id: selectedTicket.value.ticket_id,
-      customer_device_id: selectedTicket.value.customer_device_id,
-      part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
-      quantity_requested: partRequestForm.quantity_requested,
-      requested_by: partRequestForm.requested_by,
-      technician_id: partRequestForm.technician_id,
-      status: partRequestForm.status,
-      source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
-      external_item_name:
-        partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
-      external_model:
-        partRequestMode.value === 'external' && partRequestForm.external_model.trim()
-          ? partRequestForm.external_model.trim()
-          : null,
-      external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
-      external_receipt_number:
-        partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
-      external_receipt_data_url:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
-          ? partRequestForm.external_receipt_data_url
-          : null,
-      external_receipt_file_name:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
-          ? partRequestForm.external_receipt_file_name
-          : null,
-      external_receipt_file_type:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
-          ? partRequestForm.external_receipt_file_type
-          : null,
-      external_receipt_file_size:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
-          ? partRequestForm.external_receipt_file_size
-          : null,
-      approved_by: approvedBy,
-      approved_at: approvedAt,
-      notes: partRequestForm.notes || null,
-      location_id: selectedTicket.value.location_id
-    })
-  } catch (error: any) {
-    const statusMessage = error?.data?.statusMessage || error?.message
-    if (statusMessage === 'INSUFFICIENT_STOCK') {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
-      return
+    try {
+      await store.createPartRequest({
+        ticket_id: selectedTicket.value.ticket_id,
+        customer_device_id: selectedTicket.value.customer_device_id,
+        part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
+        quantity_requested: partRequestForm.quantity_requested,
+        requested_by: partRequestForm.requested_by,
+        technician_id: partRequestForm.technician_id,
+        status: partRequestForm.status,
+        source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
+        external_item_name:
+          partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
+        external_model:
+          partRequestMode.value === 'external' && partRequestForm.external_model.trim()
+            ? partRequestForm.external_model.trim()
+            : null,
+        external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
+        external_receipt_number:
+          partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
+        external_receipt_data_url:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
+            ? partRequestForm.external_receipt_data_url
+            : null,
+        external_receipt_file_name:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
+            ? partRequestForm.external_receipt_file_name
+            : null,
+        external_receipt_file_type:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
+            ? partRequestForm.external_receipt_file_type
+            : null,
+        external_receipt_file_size:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
+            ? partRequestForm.external_receipt_file_size
+            : null,
+        approved_by: approvedBy,
+        approved_at: approvedAt,
+        notes: partRequestForm.notes || null,
+        location_id: selectedTicket.value.location_id
+      })
+    } catch (error: any) {
+      const statusMessage = error?.data?.statusMessage || error?.message
+      if (statusMessage === 'INSUFFICIENT_STOCK') {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
+        return
+      }
+      throw error
     }
-    throw error
-  }
 
-  partRequestMessage.value = { type: 'primary', text: t('maintenance.messages.partRequestSaved') }
-  resetPartRequestForm()
+    partRequestMessage.value = { type: 'primary', text: t('maintenance.messages.partRequestSaved') }
+    resetPartRequestForm()
+  })
 }
 
 const handleStatusChange = async (request: PartRequest, event: Event) => {

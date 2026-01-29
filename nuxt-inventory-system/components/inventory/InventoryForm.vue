@@ -864,7 +864,12 @@
           </div>
 
           <div class="flex flex-wrap gap-3 pt-2">
-            <UButton type="submit" color="primary" :disabled="formErrors.length > 0 || !canEditInventory">
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="isSubmitting"
+              :disabled="isSubmitting || formErrors.length > 0 || !canEditInventory"
+            >
               {{ editingItem ? t('inventory.actions.save') : t('inventory.actions.add') }}
             </UButton>
             <UButton type="button" color="gray" variant="outline" @click="resetForm">
@@ -997,6 +1002,7 @@ const showList = computed(() => props.showList)
 const isEdit = computed(() => Boolean(props.itemId))
 const notFoundMessage = ref('')
 const submitError = ref('')
+const { isSubmitting, runWithLock } = useSubmitLock()
 const prefillCostSheetId = computed(() =>
   typeof route.query.costSheet === 'string' ? route.query.costSheet : ''
 )
@@ -1803,165 +1809,167 @@ const persistPendingAttachments = async (itemId: string) => {
 }
 
 const handleSubmit = async () => {
-  submitError.value = ''
-  if (formErrors.value.length > 0) {
-    return
-  }
-  if (props.itemId && !editingItem.value) {
-    return
-  }
-
-  const shouldReceive = receiptForm.value.quantity_received > 0 && receiptChanged.value
-  const receiptPayload = shouldReceive
-    ? {
-        received_at: receiptForm.value.received_at || new Date().toISOString().slice(0, 10),
-        location_id: receiptForm.value.location_id,
-        quantity_received: receiptForm.value.quantity_received,
-        unit_cost: receiptForm.value.unit_cost,
-        employee_name: receiptForm.value.employee_name?.trim() || null
-      }
-    : null
-
-  if (form.value.pricing_mode === 'MARGIN_PERCENT') {
-    form.value.price = derivedPrice.value
-  }
-  if (form.value.pricing_mode === 'COST_SHEET') {
-    form.value.cost = costSheetUnitCost.value
-    form.value.price = costSheetUnitPrice.value
-    form.value.cost_sheet_total_with_vat = costSheetTotalWithVat.value
-    if (!form.value.cost_sheet_entry_id) {
-      form.value.cost_sheet_vat_rate = vatRate.value
+  await runWithLock(async () => {
+    submitError.value = ''
+    if (formErrors.value.length > 0) {
+      return
     }
-  }
+    if (props.itemId && !editingItem.value) {
+      return
+    }
 
-  let savedId = ''
-  try {
-    if (editingItem.value) {
-      const updated: Item = {
-        ...editingItem.value,
-        name: form.value.name,
-        model: form.value.model?.trim() || null,
-        serial_number: form.value.serial_number?.trim() || null,
-        description: form.value.description ?? null,
-        price: form.value.price,
-        cost: form.value.cost,
-        category_id: form.value.category_id ?? null,
-        location_id: form.value.location_id ?? null,
-        item_type: form.value.item_type,
-        is_for_maintenance: form.value.is_for_maintenance,
-        min_stock_level: form.value.min_stock_level,
-        reorder_quantity: form.value.reorder_quantity,
-        stock_location: form.value.stock_location,
-        sku: form.value.sku ?? null,
-        vendor_sku: form.value.vendor_sku ?? null,
-        barcode: form.value.barcode ?? null,
-        weight: form.value.weight ?? null,
-        dimensions: form.value.dimensions ?? null,
-        manufacturer: form.value.manufacturer ?? null,
-        warranty_period: form.value.warranty_period ?? null,
-        unit: form.value.unit?.trim() ? form.value.unit.trim() : null,
-        employee_name: form.value.employee_name?.trim() || null,
-        pricing_mode: form.value.pricing_mode ?? 'MANUAL',
-        margin_percent: form.value.margin_percent ?? null,
-        price_override_reason: form.value.price_override_reason?.trim() || null,
-        cost_sheet_quantity: form.value.cost_sheet_quantity ?? null,
-        cost_sheet_unit_cost: form.value.cost_sheet_unit_cost ?? null,
-        cost_sheet_total_with_vat: form.value.cost_sheet_total_with_vat ?? null,
-        cost_sheet_vat_rate: form.value.cost_sheet_vat_rate ?? null,
-        cost_sheet_entry_id: form.value.cost_sheet_entry_id ?? null
+    const shouldReceive = receiptForm.value.quantity_received > 0 && receiptChanged.value
+    const receiptPayload = shouldReceive
+      ? {
+          received_at: receiptForm.value.received_at || new Date().toISOString().slice(0, 10),
+          location_id: receiptForm.value.location_id,
+          quantity_received: receiptForm.value.quantity_received,
+          unit_cost: receiptForm.value.unit_cost,
+          employee_name: receiptForm.value.employee_name?.trim() || null
+        }
+      : null
+
+    if (form.value.pricing_mode === 'MARGIN_PERCENT') {
+      form.value.price = derivedPrice.value
+    }
+    if (form.value.pricing_mode === 'COST_SHEET') {
+      form.value.cost = costSheetUnitCost.value
+      form.value.price = costSheetUnitPrice.value
+      form.value.cost_sheet_total_with_vat = costSheetTotalWithVat.value
+      if (!form.value.cost_sheet_entry_id) {
+        form.value.cost_sheet_vat_rate = vatRate.value
       }
+    }
 
-      await store.updateItem(updated)
-      if (receiptPayload && receiptPayload.location_id) {
+    let savedId = ''
+    try {
+      if (editingItem.value) {
+        const updated: Item = {
+          ...editingItem.value,
+          name: form.value.name,
+          model: form.value.model?.trim() || null,
+          serial_number: form.value.serial_number?.trim() || null,
+          description: form.value.description ?? null,
+          price: form.value.price,
+          cost: form.value.cost,
+          category_id: form.value.category_id ?? null,
+          location_id: form.value.location_id ?? null,
+          item_type: form.value.item_type,
+          is_for_maintenance: form.value.is_for_maintenance,
+          min_stock_level: form.value.min_stock_level,
+          reorder_quantity: form.value.reorder_quantity,
+          stock_location: form.value.stock_location,
+          sku: form.value.sku ?? null,
+          vendor_sku: form.value.vendor_sku ?? null,
+          barcode: form.value.barcode ?? null,
+          weight: form.value.weight ?? null,
+          dimensions: form.value.dimensions ?? null,
+          manufacturer: form.value.manufacturer ?? null,
+          warranty_period: form.value.warranty_period ?? null,
+          unit: form.value.unit?.trim() ? form.value.unit.trim() : null,
+          employee_name: form.value.employee_name?.trim() || null,
+          pricing_mode: form.value.pricing_mode ?? 'MANUAL',
+          margin_percent: form.value.margin_percent ?? null,
+          price_override_reason: form.value.price_override_reason?.trim() || null,
+          cost_sheet_quantity: form.value.cost_sheet_quantity ?? null,
+          cost_sheet_unit_cost: form.value.cost_sheet_unit_cost ?? null,
+          cost_sheet_total_with_vat: form.value.cost_sheet_total_with_vat ?? null,
+          cost_sheet_vat_rate: form.value.cost_sheet_vat_rate ?? null,
+          cost_sheet_entry_id: form.value.cost_sheet_entry_id ?? null
+        }
+
+        await store.updateItem(updated)
+        if (receiptPayload && receiptPayload.location_id) {
+          await store.receiveStock({
+            item_id: updated.item_id,
+            ...receiptPayload
+          })
+        }
+        await persistPendingAttachments(updated.item_id)
+        savedId = updated.item_id
+      } else {
+        const created = await store.createItem({
+          ...form.value,
+          model: form.value.model?.trim() || null,
+          serial_number: form.value.serial_number?.trim() || null,
+          pricing_mode: form.value.pricing_mode ?? 'MANUAL',
+          margin_percent: form.value.margin_percent ?? null,
+          price_override_reason: form.value.price_override_reason?.trim() || null,
+          cost_sheet_quantity: form.value.cost_sheet_quantity ?? null,
+          cost_sheet_unit_cost: form.value.cost_sheet_unit_cost ?? null,
+          cost_sheet_total_with_vat: form.value.cost_sheet_total_with_vat ?? null,
+          cost_sheet_vat_rate: form.value.cost_sheet_vat_rate ?? null,
+          cost_sheet_entry_id: form.value.cost_sheet_entry_id ?? null,
+          price: form.value.price,
+          cost: form.value.cost,
+          employee_name: form.value.employee_name?.trim() || null
+        })
+        if (receiptPayload && receiptPayload.location_id) {
+          await store.receiveStock({
+            item_id: created.item_id,
+            ...receiptPayload
+          })
+        }
+        await persistPendingAttachments(created.item_id)
+        savedId = created.item_id
+      }
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
+      if (status === 409 && statusMessage === 'ITEM_ALREADY_EXISTS' && !editingItem.value) {
+        const normalizeKey = (value?: string | null) => (value ?? '').trim().toLowerCase()
+        const target = store.items.find(
+          (item) =>
+            normalizeKey(item.name) === normalizeKey(form.value.name) &&
+            normalizeKey(item.model ?? '') === normalizeKey(form.value.model ?? '')
+        )
+        if (!receiptPayload || !receiptPayload.location_id || receiptPayload.quantity_received <= 0) {
+          submitError.value = t('inventory.validation.duplicateItemNeedsReceipt')
+          return
+        }
+        if (!target) {
+          submitError.value = t('inventory.validation.duplicateItem')
+          return
+        }
         await store.receiveStock({
-          item_id: updated.item_id,
+          item_id: target.item_id,
           ...receiptPayload
         })
-      }
-      await persistPendingAttachments(updated.item_id)
-      savedId = updated.item_id
-    } else {
-      const created = await store.createItem({
-        ...form.value,
-        model: form.value.model?.trim() || null,
-        serial_number: form.value.serial_number?.trim() || null,
-        pricing_mode: form.value.pricing_mode ?? 'MANUAL',
-        margin_percent: form.value.margin_percent ?? null,
-        price_override_reason: form.value.price_override_reason?.trim() || null,
-        cost_sheet_quantity: form.value.cost_sheet_quantity ?? null,
-        cost_sheet_unit_cost: form.value.cost_sheet_unit_cost ?? null,
-        cost_sheet_total_with_vat: form.value.cost_sheet_total_with_vat ?? null,
-        cost_sheet_vat_rate: form.value.cost_sheet_vat_rate ?? null,
-        cost_sheet_entry_id: form.value.cost_sheet_entry_id ?? null,
-        price: form.value.price,
-        cost: form.value.cost,
-        employee_name: form.value.employee_name?.trim() || null
-      })
-      if (receiptPayload && receiptPayload.location_id) {
-        await store.receiveStock({
-          item_id: created.item_id,
-          ...receiptPayload
-        })
-      }
-      await persistPendingAttachments(created.item_id)
-      savedId = created.item_id
-    }
-  } catch (error: unknown) {
-    const status = (error as { response?: { status?: number } })?.response?.status
-    const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
-    if (status === 409 && statusMessage === 'ITEM_ALREADY_EXISTS' && !editingItem.value) {
-      const normalizeKey = (value?: string | null) => (value ?? '').trim().toLowerCase()
-      const target = store.items.find(
-        (item) =>
-          normalizeKey(item.name) === normalizeKey(form.value.name) &&
-          normalizeKey(item.model ?? '') === normalizeKey(form.value.model ?? '')
-      )
-      if (!receiptPayload || !receiptPayload.location_id || receiptPayload.quantity_received <= 0) {
-        submitError.value = t('inventory.validation.duplicateItemNeedsReceipt')
-        return
-      }
-      if (!target) {
+        await persistPendingAttachments(target.item_id)
+        savedId = target.item_id
+      } else if (status === 409 && statusMessage === 'ITEM_ALREADY_EXISTS') {
         submitError.value = t('inventory.validation.duplicateItem')
         return
+      } else if (status === 409 && statusMessage === 'SKU_ALREADY_EXISTS') {
+        submitError.value = t('inventory.validation.skuExists')
+        return
+      } else if (status === 409 && statusMessage === 'COST_SHEET_ALREADY_USED') {
+        submitError.value = t('inventory.validation.costSheetAlreadyUsed')
+        return
+      } else if (status === 400 && statusMessage === 'COST_SHEET_NOT_FOUND') {
+        submitError.value = t('inventory.validation.costSheetNotFound')
+        return
+      } else {
+        submitError.value = t('inventory.validation.saveFailed')
+        return
       }
-      await store.receiveStock({
-        item_id: target.item_id,
-        ...receiptPayload
-      })
-      await persistPendingAttachments(target.item_id)
-      savedId = target.item_id
-    } else if (status === 409 && statusMessage === 'ITEM_ALREADY_EXISTS') {
-      submitError.value = t('inventory.validation.duplicateItem')
-      return
-    } else if (status === 409 && statusMessage === 'SKU_ALREADY_EXISTS') {
-      submitError.value = t('inventory.validation.skuExists')
-      return
-    } else if (status === 409 && statusMessage === 'COST_SHEET_ALREADY_USED') {
-      submitError.value = t('inventory.validation.costSheetAlreadyUsed')
-      return
-    } else if (status === 400 && statusMessage === 'COST_SHEET_NOT_FOUND') {
-      submitError.value = t('inventory.validation.costSheetNotFound')
-      return
-    } else {
-      submitError.value = t('inventory.validation.saveFailed')
-      return
     }
-  }
 
-  const wasEditing = Boolean(editingItem.value)
-  resetForm()
+    const wasEditing = Boolean(editingItem.value)
+    resetForm()
 
-  setFlashMessage({
-    type: 'primary',
-    text: wasEditing ? t('inventory.messages.updated') : t('inventory.messages.saved')
+    setFlashMessage({
+      type: 'primary',
+      text: wasEditing ? t('inventory.messages.updated') : t('inventory.messages.saved')
+    })
+
+    if (savedId) {
+      emit('saved', savedId)
+    }
+    if (props.redirectTo) {
+      await router.push(localePath(props.redirectTo))
+    }
   })
-
-  if (savedId) {
-    emit('saved', savedId)
-  }
-  if (props.redirectTo) {
-    await router.push(localePath(props.redirectTo))
-  }
 }
 
 const removeItem = async (itemId: string) => {

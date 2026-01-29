@@ -349,7 +349,12 @@
           </div>
 
           <div class="flex flex-wrap gap-3">
-            <UButton type="submit" color="primary" :disabled="!canEditMaintenance || isTicketLocked">
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="isSubmitting"
+              :disabled="isSubmitting || !canEditMaintenance || isTicketLocked"
+            >
               {{ editingTicketId ? t('maintenance.actions.update') : t('maintenance.actions.save') }}
             </UButton>
             <UButton
@@ -790,7 +795,12 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-              <UButton type="submit" color="primary" :disabled="!canRequestParts">
+              <UButton
+                type="submit"
+                color="primary"
+                :loading="isSubmittingPartRequest"
+                :disabled="isSubmittingPartRequest || !canRequestParts"
+              >
                 {{ t('maintenance.partRequest.submit') }}
               </UButton>
               <UButton type="button" color="gray" variant="outline" @click="resetPartRequestForm">
@@ -925,6 +935,8 @@ const editingTicketId = ref<string | null>(null)
 const editingCustomerId = ref<string | null>(null)
 const editingDeviceId = ref<string | null>(null)
 const technicians = ref<TechnicianOption[]>([])
+const { isSubmitting, runWithLock } = useSubmitLock()
+const { isSubmitting: isSubmittingPartRequest, runWithLock: withPartRequestLock } = useSubmitLock()
 const partRequestForm = reactive({
   part_id: '',
   part_query: '',
@@ -1367,173 +1379,175 @@ const syncPartQuery = () => {
 }
 
 const handleSubmit = async () => {
-  formMessage.value = null
-  if (!canEditMaintenance.value) {
-    formMessage.value = { type: 'red', text: t('permissions.readOnly') }
-    return
-  }
-  if (isTicketLocked.value) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.ticketLocked') }
-    return
-  }
-  if (!customerForm.name.trim()) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.customerRequired') }
-    return
-  }
-  if (!deviceForm.item_name.trim() || !deviceForm.model.trim()) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.deviceRequired') }
-    return
-  }
-  if (!ticketForm.receipt_number.trim()) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.receiptRequired') }
-    return
-  }
-  if (!ticketForm.employee_name.trim()) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.employeeRequired') }
-    return
-  }
-  if (!ticketForm.received_at) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.receivedDateRequired') }
-    return
-  }
-  if (!ticketForm.location_id) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
-    return
-  }
-  if (['COMPLETED', 'DELIVERED'].includes(ticketForm.status) && !ticketForm.delivered_at) {
-    formMessage.value = { type: 'red', text: t('maintenance.messages.deliveredDateRequired') }
-    return
-  }
-
-  const wasEditing = Boolean(editingTicketId.value)
-
-  try {
-    let customerId = editingCustomerId.value
-    let deviceId = editingDeviceId.value
-
-    if (editingTicketId.value && customerId && deviceId) {
-      await store.updateCustomer({
-        customer_id: customerId,
-        name: customerForm.name,
-        name_amharic: customerForm.name_amharic || null,
-        phone: customerForm.phone || null,
-        email: customerForm.email || null,
-        tin: customerForm.tin || null,
-        vat_registration_no: customerForm.vat_registration_no || null,
-        address_id: null,
-        customer_type: 'MAINTENANCE'
-      })
-      await store.updateCustomerDevice({
-        device_id: deviceId,
-        customer_id: customerId,
-        catalog_item_id: null,
-        item_name: deviceForm.item_name || null,
-        brand: deviceForm.brand || null,
-        model: deviceForm.model || null,
-        serial_number: deviceForm.serial_number || null,
-        purchase_date: null,
-        warranty_expiry: null,
-        notes: null
-      })
-    } else {
-      customerId = await store.createCustomer({
-        name: customerForm.name,
-        name_amharic: customerForm.name_amharic || null,
-        phone: customerForm.phone || null,
-        email: customerForm.email || null,
-        tin: customerForm.tin || null,
-        vat_registration_no: customerForm.vat_registration_no || null,
-        customer_type: 'MAINTENANCE'
-      })
-
-      deviceId = await store.createCustomerDevice({
-        customer_id: customerId,
-        item_name: deviceForm.item_name || null,
-        brand: deviceForm.brand || null,
-        model: deviceForm.model,
-        serial_number: deviceForm.serial_number || null
-      })
-    }
-
-    const ticketPayload = {
-      ticket_id: editingTicketId.value || undefined,
-      ticket_number: null,
-      receipt_number: ticketForm.receipt_number,
-      receipt_attachment: ticketForm.receipt_attachment || null,
-      customer_id: customerId,
-      customer_device_id: deviceId,
-      technician_id: ticketForm.technician_id || null,
-      employee_name: ticketForm.employee_name.trim(),
-      status: ticketForm.status,
-      problem_description: ticketForm.problem_description,
-      diagnosis: null,
-      estimated_cost: null,
-      estimated_completion: null,
-      repair_cost: null,
-      labor_cost: laborCostValue.value,
-      labor_hours: null,
-      total_cost: totalWithVat.value,
-      payment_status: 'PENDING',
-      priority: ticketForm.priority,
-      warranty_status: ticketForm.warranty_status,
-      received_at: ticketForm.received_at,
-      target_delivery_at: ticketForm.target_delivery_at || null,
-      delivered_at: ticketForm.delivered_at || null,
-      location_id: ticketForm.location_id
-    }
-
-    const attachmentsPayload: MaintenanceAttachment[] = ticketAttachments.value.map((attachment) => ({
-      attachment_id: '',
-      ticket_id: editingTicketId.value || '',
-      file_name: attachment.file_name,
-      file_type: attachment.file_type,
-      file_size: attachment.file_size,
-      data_url: attachment.data_url
-    }))
-
-    if (editingTicketId.value) {
-      await store.updateTicket(
-        {
-          ...ticketPayload,
-          ticket_id: editingTicketId.value
-        },
-        attachmentsPayload
-      )
-    } else {
-      await store.createTicket(ticketPayload, attachmentsPayload)
-    }
-
-    const message = wasEditing ? t('maintenance.messages.updated') : t('maintenance.messages.saved')
-    setFlashMessage({ type: 'primary', text: message })
-    await router.push(localePath('/maintenance'))
-  } catch (error: any) {
-    const statusMessage = error?.data?.statusMessage || error?.response?.statusMessage
-    if (statusMessage === 'ATTACHMENT_TOO_LARGE') {
-      formMessage.value = { type: 'red', text: t('maintenance.messages.attachmentTooLarge', { name: '' }) }
+  await runWithLock(async () => {
+    formMessage.value = null
+    if (!canEditMaintenance.value) {
+      formMessage.value = { type: 'red', text: t('permissions.readOnly') }
       return
     }
-    if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
-      formMessage.value = { type: 'red', text: t('maintenance.messages.receiptRequired') }
+    if (isTicketLocked.value) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.ticketLocked') }
       return
     }
-    if (statusMessage === 'RECEIVED_DATE_REQUIRED') {
-      formMessage.value = { type: 'red', text: t('maintenance.messages.receivedDateRequired') }
-      return
-    }
-    if (statusMessage === 'DELIVERED_DATE_REQUIRED') {
-      formMessage.value = { type: 'red', text: t('maintenance.messages.deliveredDateRequired') }
-      return
-    }
-    if (statusMessage === 'CUSTOMER_ID_REQUIRED') {
+    if (!customerForm.name.trim()) {
       formMessage.value = { type: 'red', text: t('maintenance.messages.customerRequired') }
       return
     }
-    formMessage.value = {
-      type: 'red',
-      text: wasEditing ? t('maintenance.messages.updateFailed') : t('maintenance.messages.saveFailed')
+    if (!deviceForm.item_name.trim() || !deviceForm.model.trim()) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.deviceRequired') }
+      return
     }
-    console.error('Failed to save maintenance ticket', error)
-  }
+    if (!ticketForm.receipt_number.trim()) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.receiptRequired') }
+      return
+    }
+    if (!ticketForm.employee_name.trim()) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.employeeRequired') }
+      return
+    }
+    if (!ticketForm.received_at) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.receivedDateRequired') }
+      return
+    }
+    if (!ticketForm.location_id) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
+      return
+    }
+    if (['COMPLETED', 'DELIVERED'].includes(ticketForm.status) && !ticketForm.delivered_at) {
+      formMessage.value = { type: 'red', text: t('maintenance.messages.deliveredDateRequired') }
+      return
+    }
+
+    const wasEditing = Boolean(editingTicketId.value)
+
+    try {
+      let customerId = editingCustomerId.value
+      let deviceId = editingDeviceId.value
+
+      if (editingTicketId.value && customerId && deviceId) {
+        await store.updateCustomer({
+          customer_id: customerId,
+          name: customerForm.name,
+          name_amharic: customerForm.name_amharic || null,
+          phone: customerForm.phone || null,
+          email: customerForm.email || null,
+          tin: customerForm.tin || null,
+          vat_registration_no: customerForm.vat_registration_no || null,
+          address_id: null,
+          customer_type: 'MAINTENANCE'
+        })
+        await store.updateCustomerDevice({
+          device_id: deviceId,
+          customer_id: customerId,
+          catalog_item_id: null,
+          item_name: deviceForm.item_name || null,
+          brand: deviceForm.brand || null,
+          model: deviceForm.model || null,
+          serial_number: deviceForm.serial_number || null,
+          purchase_date: null,
+          warranty_expiry: null,
+          notes: null
+        })
+      } else {
+        customerId = await store.createCustomer({
+          name: customerForm.name,
+          name_amharic: customerForm.name_amharic || null,
+          phone: customerForm.phone || null,
+          email: customerForm.email || null,
+          tin: customerForm.tin || null,
+          vat_registration_no: customerForm.vat_registration_no || null,
+          customer_type: 'MAINTENANCE'
+        })
+
+        deviceId = await store.createCustomerDevice({
+          customer_id: customerId,
+          item_name: deviceForm.item_name || null,
+          brand: deviceForm.brand || null,
+          model: deviceForm.model,
+          serial_number: deviceForm.serial_number || null
+        })
+      }
+
+      const ticketPayload = {
+        ticket_id: editingTicketId.value || undefined,
+        ticket_number: null,
+        receipt_number: ticketForm.receipt_number,
+        receipt_attachment: ticketForm.receipt_attachment || null,
+        customer_id: customerId,
+        customer_device_id: deviceId,
+        technician_id: ticketForm.technician_id || null,
+        employee_name: ticketForm.employee_name.trim(),
+        status: ticketForm.status,
+        problem_description: ticketForm.problem_description,
+        diagnosis: null,
+        estimated_cost: null,
+        estimated_completion: null,
+        repair_cost: null,
+        labor_cost: laborCostValue.value,
+        labor_hours: null,
+        total_cost: totalWithVat.value,
+        payment_status: 'PENDING',
+        priority: ticketForm.priority,
+        warranty_status: ticketForm.warranty_status,
+        received_at: ticketForm.received_at,
+        target_delivery_at: ticketForm.target_delivery_at || null,
+        delivered_at: ticketForm.delivered_at || null,
+        location_id: ticketForm.location_id
+      }
+
+      const attachmentsPayload: MaintenanceAttachment[] = ticketAttachments.value.map((attachment) => ({
+        attachment_id: '',
+        ticket_id: editingTicketId.value || '',
+        file_name: attachment.file_name,
+        file_type: attachment.file_type,
+        file_size: attachment.file_size,
+        data_url: attachment.data_url
+      }))
+
+      if (editingTicketId.value) {
+        await store.updateTicket(
+          {
+            ...ticketPayload,
+            ticket_id: editingTicketId.value
+          },
+          attachmentsPayload
+        )
+      } else {
+        await store.createTicket(ticketPayload, attachmentsPayload)
+      }
+
+      const message = wasEditing ? t('maintenance.messages.updated') : t('maintenance.messages.saved')
+      setFlashMessage({ type: 'primary', text: message })
+      await router.push(localePath('/maintenance'))
+    } catch (error: any) {
+      const statusMessage = error?.data?.statusMessage || error?.response?.statusMessage
+      if (statusMessage === 'ATTACHMENT_TOO_LARGE') {
+        formMessage.value = { type: 'red', text: t('maintenance.messages.attachmentTooLarge', { name: '' }) }
+        return
+      }
+      if (statusMessage === 'RECEIPT_NUMBER_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('maintenance.messages.receiptRequired') }
+        return
+      }
+      if (statusMessage === 'RECEIVED_DATE_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('maintenance.messages.receivedDateRequired') }
+        return
+      }
+      if (statusMessage === 'DELIVERED_DATE_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('maintenance.messages.deliveredDateRequired') }
+        return
+      }
+      if (statusMessage === 'CUSTOMER_ID_REQUIRED') {
+        formMessage.value = { type: 'red', text: t('maintenance.messages.customerRequired') }
+        return
+      }
+      formMessage.value = {
+        type: 'red',
+        text: wasEditing ? t('maintenance.messages.updateFailed') : t('maintenance.messages.saveFailed')
+      }
+      console.error('Failed to save maintenance ticket', error)
+    }
+  })
 }
 
 const formatDateInput = (value?: string | null) => {
@@ -1585,107 +1599,109 @@ const cancelEdit = async () => {
 }
 
 const submitPartRequest = async () => {
-  partRequestMessage.value = null
-  if (!canRequestParts.value) {
-    partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
-    return
-  }
-  if (!editingTicketId.value || !editingDeviceId.value) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestTicketRequired') }
-    return
-  }
-  if (partRequestMode.value === 'internal' && !partRequestForm.part_id) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequired') }
-    return
-  }
-  if (!partRequestForm.requested_by.trim()) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.requestedByRequired') }
-    return
-  }
-  if (!ticketForm.technician_id.trim()) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.technicianRequired') }
-    return
-  }
-  if (!ticketForm.location_id) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
-    return
-  }
-  if (partRequestForm.quantity_requested <= 0) {
-    partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partQuantityRequired') }
-    return
-  }
-
-  if (partRequestMode.value === 'external') {
-    if (!partRequestForm.external_item_name.trim()) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalItemRequired') }
+  await withPartRequestLock(async () => {
+    partRequestMessage.value = null
+    if (!canRequestParts.value) {
+      partRequestMessage.value = { type: 'red', text: t('permissions.readOnly') }
       return
     }
-    if (!partRequestForm.external_receipt_number.trim()) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalReceiptRequired') }
+    if (!editingTicketId.value || !editingDeviceId.value) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestTicketRequired') }
       return
     }
-    if (partRequestForm.external_cost <= 0) {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalCostRequired') }
+    if (partRequestMode.value === 'internal' && !partRequestForm.part_id) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequired') }
       return
     }
-  }
-
-  const isApproved = partRequestForm.status === 'APPROVED' && canApproveParts.value
-  const approvedAt = isApproved ? new Date().toISOString() : null
-  const approvedBy = isApproved ? user.value?.user_id ?? null : null
-
-  try {
-    await store.createPartRequest({
-      ticket_id: editingTicketId.value,
-      customer_device_id: editingDeviceId.value,
-      part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
-      quantity_requested: partRequestForm.quantity_requested,
-      requested_by: partRequestForm.requested_by,
-      technician_id: ticketForm.technician_id,
-      status: partRequestForm.status,
-      source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
-      external_item_name:
-        partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
-      external_model:
-        partRequestMode.value === 'external' && partRequestForm.external_model.trim()
-          ? partRequestForm.external_model.trim()
-          : null,
-      external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
-      external_receipt_number:
-        partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
-      external_receipt_data_url:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
-          ? partRequestForm.external_receipt_data_url
-          : null,
-      external_receipt_file_name:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
-          ? partRequestForm.external_receipt_file_name
-          : null,
-      external_receipt_file_type:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
-          ? partRequestForm.external_receipt_file_type
-          : null,
-      external_receipt_file_size:
-        partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
-          ? partRequestForm.external_receipt_file_size
-          : null,
-      approved_by: approvedBy,
-      approved_at: approvedAt,
-      notes: partRequestForm.notes || null,
-      location_id: ticketForm.location_id
-    })
-  } catch (error: any) {
-    const statusMessage = error?.data?.statusMessage || error?.message
-    if (statusMessage === 'INSUFFICIENT_STOCK') {
-      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
+    if (!partRequestForm.requested_by.trim()) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.requestedByRequired') }
       return
     }
-    throw error
-  }
+    if (!ticketForm.technician_id.trim()) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.technicianRequired') }
+      return
+    }
+    if (!ticketForm.location_id) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.locationRequired') }
+      return
+    }
+    if (partRequestForm.quantity_requested <= 0) {
+      partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partQuantityRequired') }
+      return
+    }
 
-  partRequestNotice.value = { type: 'primary', text: t('maintenance.messages.partRequestSaved') }
-  isPartRequestModalOpen.value = false
-  resetPartRequestForm()
+    if (partRequestMode.value === 'external') {
+      if (!partRequestForm.external_item_name.trim()) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalItemRequired') }
+        return
+      }
+      if (!partRequestForm.external_receipt_number.trim()) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalReceiptRequired') }
+        return
+      }
+      if (partRequestForm.external_cost <= 0) {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.externalCostRequired') }
+        return
+      }
+    }
+
+    const isApproved = partRequestForm.status === 'APPROVED' && canApproveParts.value
+    const approvedAt = isApproved ? new Date().toISOString() : null
+    const approvedBy = isApproved ? user.value?.user_id ?? null : null
+
+    try {
+      await store.createPartRequest({
+        ticket_id: editingTicketId.value,
+        customer_device_id: editingDeviceId.value,
+        part_id: partRequestMode.value === 'external' ? null : partRequestForm.part_id,
+        quantity_requested: partRequestForm.quantity_requested,
+        requested_by: partRequestForm.requested_by,
+        technician_id: ticketForm.technician_id,
+        status: partRequestForm.status,
+        source_preference: partRequestMode.value === 'external' ? 'EXTERNAL_SUPPLIER' : 'STORE_INVENTORY',
+        external_item_name:
+          partRequestMode.value === 'external' ? partRequestForm.external_item_name.trim() : null,
+        external_model:
+          partRequestMode.value === 'external' && partRequestForm.external_model.trim()
+            ? partRequestForm.external_model.trim()
+            : null,
+        external_cost: partRequestMode.value === 'external' ? partRequestForm.external_cost : null,
+        external_receipt_number:
+          partRequestMode.value === 'external' ? partRequestForm.external_receipt_number.trim() : null,
+        external_receipt_data_url:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_data_url
+            ? partRequestForm.external_receipt_data_url
+            : null,
+        external_receipt_file_name:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_name
+            ? partRequestForm.external_receipt_file_name
+            : null,
+        external_receipt_file_type:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_type
+            ? partRequestForm.external_receipt_file_type
+            : null,
+        external_receipt_file_size:
+          partRequestMode.value === 'external' && partRequestForm.external_receipt_file_size
+            ? partRequestForm.external_receipt_file_size
+            : null,
+        approved_by: approvedBy,
+        approved_at: approvedAt,
+        notes: partRequestForm.notes || null,
+        location_id: ticketForm.location_id
+      })
+    } catch (error: any) {
+      const statusMessage = error?.data?.statusMessage || error?.message
+      if (statusMessage === 'INSUFFICIENT_STOCK') {
+        partRequestMessage.value = { type: 'red', text: t('maintenance.messages.partRequestInsufficientStock') }
+        return
+      }
+      throw error
+    }
+
+    partRequestNotice.value = { type: 'primary', text: t('maintenance.messages.partRequestSaved') }
+    isPartRequestModalOpen.value = false
+    resetPartRequestForm()
+  })
 }
 
 const handleStatusChange = async (request: PartRequest, event: Event) => {

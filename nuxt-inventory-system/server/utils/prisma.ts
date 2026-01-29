@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client'
 import { getDbConfig } from '~/server/utils/dbConfig'
 
 const buildDatabaseUrl = () => {
+  const appEnv = (process.env.APP_ENV || process.env.NUXT_PUBLIC_APP_ENV || '').toLowerCase()
+  const envOverride =
+    (appEnv === 'local' && process.env.DATABASE_URL_LOCAL) ||
+    (appEnv === 'test' && process.env.DATABASE_URL_TEST) ||
+    ((appEnv === 'prod' || appEnv === 'production') && process.env.DATABASE_URL_PROD)
+
+  if (envOverride) {
+    return envOverride
+  }
+
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL
   }
